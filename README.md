@@ -1,11 +1,11 @@
-# oxide_formation_energy
+# Formation energy mixing
 Creating binary oxide phase diagrams is an extremely time consuming process both experimentally and computationally through DFT. Exploring all of chemical space is a daunting task but may be necessary if we are to discover novel functional materials.
 
 ## Data mining
 
 To analyse formation energies in oxides, we must first get information on unary and binary oxides themselves from OQMD and Materials Project. In `data_gather` we calculate formation energies and collect structures contained for a given set of elements and their oxides.  
 
-## Formation energy mixing 
+## High-level procedure overview
 
 When we mix two elements into an oxide, the two elements can have different oxidation states. 
 
