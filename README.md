@@ -11,6 +11,6 @@ When we mix two elements into an oxide, the two elements can have different oxid
 
 This model attempts to describe how this stabilises binary oxides.
 
-If creating an oxide from elements A–B in stoichiometry (A+B):O=2, for instance, we need to make quadratic equations which fit through the most stable points on the A–O and B–O phase diagrams, where the (0, 0) value is AO2 and BO2, and we need quadratic equations for reduction and oxidation. This general representation can be applied to any element, and the procedure for creating the quadratics, which can be element specific, is found in the `make_quadratics/oqmd_analysis.ipynb` notebook.
+If creating an oxide from elements A–B in stoichiometry (A+B):O=2, for instance, we need to make quadratic equations which fit through the most stable points on the A–O and B–O phase diagrams, where the (0, 0) value is AO2 and BO2, and we need quadratic equations for reduction and oxidation. This general representation can be applied to any element, and the procedure for creating the quadratics, which can be element specific, is found in the `make_quadratics/create_quadratics.ipynb` notebook.
 
 We then enforce that the average oxidation state of non-oxygen elements in ABO4 be +4, and take a weighted sum of the oxidation and reduction equations for any combination of elements in formation_energy_mixer.ipynb
