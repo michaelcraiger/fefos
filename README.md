@@ -30,7 +30,13 @@ conda activate oxide_mixer
 git clone https://github.com/michaelcraiger/oxide_formation_energy
 ``` 
 
-then install the required packages, need to use pip here since qmpy_rester requires it. In order to only pip install into packages within the conda environment, use the pip package within the conda environment directory, it should look something like /anaconda/envs/env_name/pip, you can get most of the relevant path by doing `which python` in the environment.
+then install the required packages, need to use pip here since qmpy_rester requires it. 
+```
+conda install pip
+```
+
+In order to only pip install into packages within the conda environment, use the pip package within the conda environment directory, it should look something like /anaconda/envs/env_name/pip, you can get the relevant path by doing `which pip` in the environment.
+
 
 ```
 $conda_env/pip install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook==5.7.11 qmpy_rester==0.2.0 ipykernel==6.13.0
