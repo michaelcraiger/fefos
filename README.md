@@ -35,13 +35,13 @@ then install the required packages, need to use pip here since qmpy_rester requi
 conda install pip
 ```
 
-In order to only pip install into packages within the conda environment, use the pip package within the conda environment directory, it should look something like /anaconda/envs/env_name/pip, you can get the relevant path by doing `which pip` in the environment.
+In order to only pip install into packages within the conda environment, use the pip package within the conda environment directory, it should look something like /anaconda/envs/env_name/pip, you can get the relevant path by doing `which pip` in the environment, below we just denote that path to pip as $conda_env.
 
 
 ```
 $conda_env/pip install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook==5.7.11 qmpy_rester==0.2.0 ipykernel==6.13.0
 ```
-Finally to use the environment in ipykernl
+Finally to be able to use the environment in ipykernel
 ```
 python -m ipykernel install --user --name=oxide_mixer
 ```
