@@ -18,7 +18,7 @@ We then enforce that the average oxidation state of non-oxygen elements in ABO4 
 To use the code, use python version 3.8.12, other versions can have difficulty using this version of pymatgen. If using conda, 
 
 ```
-conda create -n oxide_mixer python=3.8.12`
+conda create -n oxide_mixer python=3.8.12
 ```
 Then activate the environment
 
@@ -30,10 +30,10 @@ conda activate oxide_mixer
 git clone https://github.com/michaelcraiger/oxide_formation_energy
 ``` 
 
-then install the required packages
+then install the required packages, need to use pip here since qmpy_rester requires it. In order to only pip install into packages within the conda environment, use the pip package within the conda environment directory, it should look something like /anaconda/envs/env_name/pip, you can get most of the relevant path by doing `which python` in the environment.
 
 ```
-pip install matplotlib numpy scipy pymatgen==2022.4.19 notebook qmpy_rester
+$conda_env/pip install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook==5.7.11 qmpy_rester==0.2.0 ipykernel==6.13.0
 ```
 Finally to use the environment in ipykernl
 ```
