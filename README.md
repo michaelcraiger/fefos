@@ -39,7 +39,7 @@ In order to only pip install into packages within the conda environment, use the
 
 
 ```
-$conda_env/pip install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook==5.7.11 qmpy_rester==0.2.0 ipykernel==6.13.0
+$conda_env/pip install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook qmpy_rester==0.2.0 ipykernel
 ```
 Finally to be able to use the environment in ipykernel
 ```
