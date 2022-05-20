@@ -35,3 +35,7 @@ then install the required packages
 ```
 pip install matplotlib numpy scipy pymatgen==2022.4.19 notebook qmpy_rester
 ```
+Finally to use the environment in ipykernl
+```
+python -m ipykernel install --user --name=oxide_mixer
+```
