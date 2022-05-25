@@ -1,6 +1,6 @@
 # Formation energy mixing
 <p align="center">
-  <img src="https://github.com/michaelcraiger/oxide_formation_energy/blob/main/mixing_pic.png" alt="Sublime's custom image"/>
+  <img src="https://github.com/michaelcraiger/oxide_formation_energy/blob/main/mixing_pic.jpg" alt="Sublime's custom image"/>
 </p>
 
 
