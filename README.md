@@ -6,11 +6,7 @@
 
 Creating binary oxide phase diagrams is an extremely time consuming process both experimentally and computationally through DFT. Exploring all of chemical space is a daunting task but may be necessary if we are to discover novel functional materials.
 
-## Data mining
-
-To analyse formation energies in oxides, we must first get information on unary and binary oxides themselves from OQMD and Materials Project. In `data_gather` we calculate formation energies and collect structures contained for a given set of elements and their oxides.  
-
-## High-level procedure overview
+## Installing
 
 When we mix two elements into an oxide, the two elements can have different oxidation states. 
 
@@ -45,10 +41,12 @@ Finally to be able to use the environment in ipykernel
 python -m ipykernel install --user --name=oxide_mixer
 ```
 
+## File system description
+
 In the directory `data_gather` is found the code to collect the necessary data from Materials Project in `mp_data_save.ipynb`. This is saved as pickle files since there contains pymatgen structure objects and they are under `unary_oxide_data.p` for unary oxide information, `ele2gs.p` which is the single element energy data, required to calculate formation energies and the binary oxide data under `binary_oxide_data.p`. These files are needed to fit the coefficients for the parabolas of each of the 3 considered binary oxide types i.e. MO, M2O3 and MO2-type oxides under the `make_quadratics` directory. Within `data_gather` another file which saves all the MO/M2O3/MO2-type binary oxides with the appropriate pairs of elements, and formation energy infomation required by FEFOS, is seen in `binary_pairing_data.ipynb` and saved as `binary_pairing_data.p` which is required to plot Figures 2 and 4.
 
 In `make_quadratics` there is code to save the oxidation and reduction parabola coefficients for each considered element, oxidation state pairing under `mp_quadratic_equations_ox.p` and `mp_quadratic_equations_red.p` denoting oxidation and reduction respectively.
 
 `roost_test_data` contains the csv files required to plot the learning curves for Figure 3 in the manuscript, found in the Goodall, Lee Nature Communications paper under 'Data availability'.
 
-The code to plot Figure 1, 2 and 4 is in the notebook `formation_energy_mixer.ipynb` as this includes the code which carries out the FEFOS procedure once the parabola coefficients and binary oxide data from Materials Project are saved.`
+The code to plot Figure 1, 2 and 4 is in the notebook `formation_energy_mixer.ipynb` as this includes the code which carries out the FEFOS procedure once the parabola coefficients and binary oxide data from Materials Project are saved.
