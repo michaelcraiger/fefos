@@ -35,18 +35,20 @@ conda activate oxide_mixer
 git clone https://github.com/michaelcraiger/oxide_formation_energy
 ``` 
 
-then install the required packages, need to use pip here since qmpy_rester requires it. 
-```
-conda install pip
-```
-
-In order to only pip install into packages within the conda environment, use the pip package within the conda environment directory, it should look something like /anaconda/envs/env_name/pip, you can get the relevant path by doing `which pip` in the environment, below we just denote that path to pip as $conda_env.
-
+Then in the environment:
 
 ```
-$conda_env/pip install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook qmpy_rester==0.2.0 ipykernel
+conda install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook ipykernel
 ```
 Finally to be able to use the environment in ipykernel
 ```
 python -m ipykernel install --user --name=oxide_mixer
 ```
+
+In the directory `data_gather` is found the code to collect the necessary data from Materials Project in `mp_data_save.ipynb`. This is saved as pickle files since there contains pymatgen structure objects and they are under `unary_oxide_data.p` for unary oxide information, `ele2gs.p` which is the single element energy data, required to calculate formation energies and the binary oxide data under `binary_oxide_data.p`. These files are needed to fit the coefficients for the parabolas of each of the 3 considered binary oxide types i.e. MO, M2O3 and MO2-type oxides under the `make_quadratics` directory. Within `data_gather` another file which saves all the MO/M2O3/MO2-type binary oxides with the appropriate pairs of elements, and formation energy infomation required by FEFOS, is seen in `binary_pairing_data.ipynb` and saved as `binary_pairing_data.p` which is required to plot Figures 2 and 4.
+
+In `make_quadratics` there is code to save the oxidation and reduction parabola coefficients for each considered element, oxidation state pairing under `mp_quadratic_equations_ox.p` and `mp_quadratic_equations_red.p` denoting oxidation and reduction respectively.
+
+`roost_test_data` contains the csv files required to plot the learning curves for Figure 3 in the manuscript, found in the Goodall, Lee Nature Communications paper under 'Data availability'.
+
+The code to plot Figure 1, 2 and 4 is in the notebook `formation_energy_mixer.ipynb` as this includes the code which carries out the FEFOS procedure once the parabola coefficients and binary oxide data from Materials Project are saved.`
