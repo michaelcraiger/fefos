@@ -16,7 +16,7 @@ If creating an oxide from elements A–B in stoichiometry (A+B):O=2, for instanc
 
 We then enforce that the average oxidation state of non-oxygen elements in ABO4 be +4, and take a weighted sum of the oxidation and reduction equations for any combination of elements in formation_energy_mixer.ipynb
 
-## Overview
+## Installing
 
 To use the code, use python version 3.8.12, other versions can have difficulty using this version of pymatgen. If using conda, 
 
