@@ -5,7 +5,7 @@
 
 <p style='text-align: justify;'> 
 
-Creating binary oxide phase diagrams is an extremely time consuming process both experimentally and computationally through DFT. Exploring all of chemical space is a daunting task but may be necessary if we are to discover novel functional materials.
+Creating binary oxide phase diagrams is a time consuming process both experimentally and computationally, and exploring all of chemical space is a daunting task but may be necessary if we are to discover novel functional materials. This repo contains code to predict oxide stability with errors on par with deep learning methods.
 
 ## Overview
 
