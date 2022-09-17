@@ -18,7 +18,7 @@ We then enforce that the average oxidation state of non-oxygen elements in ABO4 
 
 ## Installing
 
-To use the code, use python version 3.8.12, other versions can have difficulty using this version of pymatgen. If using conda, 
+To use the code, use python version 3.8.12, other versions can have difficulty using the necessary version of pymatgen. Using conda; 
 
 ```
 conda create -n oxide_mixer python=3.8.12
