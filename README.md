@@ -3,7 +3,7 @@
   <img src="https://github.com/michaelcraiger/oxide_formation_energy/blob/main/mixing_pic.jpg" alt="Sublime's custom image"/>
 </p>
 
-<div style="text-align: justify"> 
+<p style='text-align: justify;'> 
 
 Creating binary oxide phase diagrams is an extremely time consuming process both experimentally and computationally through DFT. Exploring all of chemical space is a daunting task but may be necessary if we are to discover novel functional materials.
 
@@ -54,4 +54,4 @@ In `make_quadratics` there is code to save the oxidation and reduction parabola 
 
 The code to plot Figure 1, 2 and 4 is in the notebook `formation_energy_mixer.ipynb` as this includes the code which carries out the FEFOS procedure once the parabola coefficients and binary oxide data from Materials Project are saved.
 
-</div>
+</p>
