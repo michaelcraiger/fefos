@@ -1,4 +1,4 @@
-# Formation energy mixing
+# Formation energy from oxidation states (FEFOS)
 <p align="center">
   <img src="https://github.com/michaelcraiger/oxide_formation_energy/blob/main/mixing_pic.jpg" alt="Sublime's custom image"/>
 </p>
@@ -17,7 +17,7 @@ If creating an oxide from elements A–B in stoichiometry (A+B):O=2, for instanc
 
 ## Installing
 
-To use the code, use python version 3.8.12, other versions can have difficulty using the necessary version of pymatgen. Using conda; 
+`NOTE` the code is very version critical, use python version 3.8.12, other versions can have difficulty using the necessary version of pymatgen. Using conda; 
 
 ```
 conda create -n oxide_mixer python=3.8.12
