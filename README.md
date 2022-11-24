@@ -35,7 +35,7 @@ git clone https://github.com/michaelcraiger/oxide_formation_energy
 Then in the environment:
 
 ```
-conda install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook ipykernel xlrd
+conda install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook ipykernel 
 ```
 Finally to be able to use the environment in ipykernel
 ```
