@@ -1,11 +1,11 @@
 # Formation energy from oxidation states (FEFOS)
-<p align="center">
-  <img src="https://github.com/michaelcraiger/oxide_formation_energy/blob/main/mixing_pic.jpg" alt="Sublime's custom image"/>
-</p>
+
 
 <p style='text-align: justify;'> 
 
 Creating binary oxide phase diagrams is a time consuming process both experimentally and computationally, and exploring all of chemical space is a daunting task but may be necessary if we are to discover novel functional materials. This repo contains code to predict oxide stability with errors on par with deep learning methods.
+
+[See the paper here!](https://chemrxiv.org/engage/chemrxiv/article-details/63bc39773af973835b618192)
 
 ## Overview
 
