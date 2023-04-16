@@ -29,7 +29,7 @@ conda activate oxide_mixer
 ```
 
 ```
-git clone https://github.com/michaelcraiger/oxide_formation_energy
+git clone https://github.com/michaelcraiger/fefos
 ``` 
 
 Then in the environment:
