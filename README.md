@@ -5,7 +5,7 @@
 
 Creating binary oxide phase diagrams is a time consuming process both experimentally and computationally, and exploring all of chemical space is a daunting task but may be necessary if we are to discover novel functional materials. This repo contains code to predict oxide stability with errors on par with deep learning methods.
 
-[See the paper here!](https://chemrxiv.org/engage/chemrxiv/article-details/63bc39773af973835b618192)
+[See the paper here!](https://pubs.rsc.org/en/Content/ArticleLanding/2023/CY/D3CY00107E)
 
 ## Overview
 
