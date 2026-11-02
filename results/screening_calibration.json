@@ -1,0 +1,54 @@
+{
+ "two-cation oxides": [
+  {
+   "threshold": null,
+   "n": 1892,
+   "stable": 0.238,
+   "near_hull": 0.479
+  },
+  {
+   "threshold": 0.0,
+   "n": 530,
+   "stable": 0.317,
+   "near_hull": 0.511
+  },
+  {
+   "threshold": -0.05,
+   "n": 169,
+   "stable": 0.337,
+   "near_hull": 0.45
+  },
+  {
+   "threshold": -0.1,
+   "n": 67,
+   "stable": 0.448,
+   "near_hull": 0.493
+  }
+ ],
+ "all held-out ionic compounds": [
+  {
+   "threshold": null,
+   "n": 11039,
+   "stable": 0.343,
+   "near_hull": 0.57
+  },
+  {
+   "threshold": 0.0,
+   "n": 4392,
+   "stable": 0.447,
+   "near_hull": 0.651
+  },
+  {
+   "threshold": -0.05,
+   "n": 1638,
+   "stable": 0.507,
+   "near_hull": 0.665
+  },
+  {
+   "threshold": -0.1,
+   "n": 418,
+   "stable": 0.471,
+   "near_hull": 0.557
+  }
+ ]
+}

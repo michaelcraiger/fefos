@@ -8,3 +8,5 @@ __pycache__/
 .pytest_cache/
 build/
 dist/
+.venv-ml/
+benchmarks/.cache/

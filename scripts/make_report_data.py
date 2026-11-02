@@ -33,6 +33,68 @@ def table(df: pd.DataFrame, models=MODELS) -> dict:
     return out
 
 
+OER_METALS = {"Ir", "Ru", "Rh", "Pd", "Pt", "Co", "Ni", "Fe", "Mn", "Cu"}
+
+
+def screening_summary(s: pd.DataFrame) -> dict:
+    new = s[~s.in_mp]
+    known = s[s.in_mp & s.charge_consistent & s.in_domain]
+    stable = known.mp_dhd < 0
+    calib = [
+        {
+            "threshold": None,
+            "n": int(len(known)),
+            "stable": round(float(stable.mean()), 3),
+            "near_hull": round(float((known.mp_dhd < 0.05).mean()), 3),
+        }
+    ]
+    for thr in (0.0, -0.05, -0.10):
+        m = known.dhd_pred < thr
+        calib.append(
+            {
+                "threshold": thr,
+                "n": int(m.sum()),
+                "stable": round(float(stable[m].mean()), 3),
+                "near_hull": round(float((known.mp_dhd[m] < 0.05).mean()), 3),
+            }
+        )
+    short = s[s.shortlist].copy()
+    xcheck_path = RES / "screening_crosscheck.csv.gz"
+    if xcheck_path.exists():
+        x = pd.read_csv(xcheck_path).set_index("formula")
+        short["residual_model_dhd"] = x.residual_model_dhd.reindex(short.formula).to_numpy()
+        short["consensus"] = (
+            x.consensus.reindex(short.formula).fillna(False).astype(bool).to_numpy()
+        )
+    cols = [
+        "formula",
+        "A",
+        "B",
+        "dhd_pred",
+        "fefos_bonds",
+        "hull_energy",
+        "fefos_oxidation_states",
+        "n_known_ternaries",
+        "toxic",
+        "precious",
+    ]
+    short["oer_metal"] = [bool({a, b} & OER_METALS) for a, b in zip(short.A, short.B)]
+    return {
+        "n_candidates": int(len(s)),
+        "n_in_mp": int(s.in_mp.sum()),
+        "n_new": int(len(new)),
+        "n_new_consistent_in_domain": int((new.charge_consistent & new.in_domain).sum()),
+        "n_shortlist": int(len(short)),
+        "n_systems": int((short.A + "-" + short.B).nunique()),
+        "calibration_in_mp": calib,
+        "shortlist": short[
+            [c for c in cols + ["oer_metal", "residual_model_dhd", "consensus"] if c in short]
+        ]
+        .round(4)
+        .to_dict("records"),
+    }
+
+
 def main() -> None:
     r = pd.read_csv(RES / "benchmark_predictions.csv.gz")
     summary = json.loads((RES / "summary.json").read_text())
@@ -209,6 +271,12 @@ def main() -> None:
         "mean_residual": round(float(res.mean()), 4),
         "n": int(len(sub)),
     }
+    # 7. oxide screen (scripts/screen_oxides.py) and the ML comparison (benchmarks/run_related.py)
+    if (RES / "screening.csv.gz").exists():
+        out["screening"] = screening_summary(pd.read_csv(RES / "screening.csv.gz"))
+    for name in ("related_work", "screening_calibration", "screening_crosscheck"):
+        if (RES / f"{name}.json").exists():
+            out[name] = json.loads((RES / f"{name}.json").read_text())
     (RES / "report_data.json").write_text(json.dumps(out, default=float))
     print(
         json.dumps({k: v for k, v in out.items() if not k.startswith("parity")}, default=float)[

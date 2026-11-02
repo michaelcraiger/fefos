@@ -1,0 +1,109 @@
+{
+ "held_out_calibration": {
+  "all held-out two-cation oxides": {
+   "n": 1892,
+   "stable": 0.238,
+   "near_hull": 0.479
+  },
+  "FEFOS screen (bond correction < -0.10)": {
+   "n": 67,
+   "stable": 0.448,
+   "near_hull": 0.493
+  },
+  "residual model predicts stable": {
+   "n": 246,
+   "stable": 0.707,
+   "near_hull": 0.882
+  },
+  "both": {
+   "n": 19,
+   "stable": 0.895,
+   "near_hull": 0.895
+  }
+ },
+ "n_shortlist": 113,
+ "n_consensus": 16,
+ "n_residual_model_stable_new": 436,
+ "consensus": [
+  {
+   "formula": "TlReO5",
+   "dhd_pred": -0.1377,
+   "residual_model_dhd": -0.051
+  },
+  {
+   "formula": "Rb2IrO3",
+   "dhd_pred": -0.1354,
+   "residual_model_dhd": -0.1291
+  },
+  {
+   "formula": "Tl4Re2O13",
+   "dhd_pred": -0.1257,
+   "residual_model_dhd": -0.0418
+  },
+  {
+   "formula": "Tb3ReO8",
+   "dhd_pred": -0.1207,
+   "residual_model_dhd": -0.0491
+  },
+  {
+   "formula": "RbIrO2",
+   "dhd_pred": -0.1206,
+   "residual_model_dhd": -0.0245
+  },
+  {
+   "formula": "Dy3ReO8",
+   "dhd_pred": -0.118,
+   "residual_model_dhd": -0.0508
+  },
+  {
+   "formula": "Rb6Ir2O7",
+   "dhd_pred": -0.1153,
+   "residual_model_dhd": -0.1648
+  },
+  {
+   "formula": "Eu2Mo4O15",
+   "dhd_pred": -0.1131,
+   "residual_model_dhd": -0.0221
+  },
+  {
+   "formula": "Tm3ReO8",
+   "dhd_pred": -0.1099,
+   "residual_model_dhd": -0.0536
+  },
+  {
+   "formula": "CaBeO2",
+   "dhd_pred": -0.1098,
+   "residual_model_dhd": -0.0262
+  },
+  {
+   "formula": "CsLuO2",
+   "dhd_pred": -0.1098,
+   "residual_model_dhd": -0.0371
+  },
+  {
+   "formula": "Tl3ReO8",
+   "dhd_pred": -0.1088,
+   "residual_model_dhd": -0.1185
+  },
+  {
+   "formula": "CsYbO2",
+   "dhd_pred": -0.1065,
+   "residual_model_dhd": -0.0313
+  },
+  {
+   "formula": "Lu3ReO8",
+   "dhd_pred": -0.105,
+   "residual_model_dhd": -0.0524
+  },
+  {
+   "formula": "Rb4Ir2O5",
+   "dhd_pred": -0.1044,
+   "residual_model_dhd": -0.1317
+  },
+  {
+   "formula": "In3ReO8",
+   "dhd_pred": -0.1015,
+   "residual_model_dhd": -0.0184
+  }
+ ]
+}

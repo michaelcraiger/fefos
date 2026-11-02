@@ -129,6 +129,65 @@ KMgF3              -3.460   -3.518  K 2.654 A (+1.00), Mg 1.988 A (+2.00)
 Li2ZrN2            -1.122   -1.269  Li 2.045 A (+1.00), Zr 2.275 A (+4.00)
 ```
 
+## FEFOS against machine learning
+
+`benchmarks/` compares FEFOS with composition-only machine learning on the
+same data. That covers Magpie descriptors with gradient boosting (Ward et al.
+2016, the baseline of Bartel et al. 2020) and a compact re-implementation of
+Roost (Goodall and Lee 2020, the model the 2023 paper compared against). Test
+compounds come from 20% of chemical systems never seen in training, and every
+model also gets all 3,657 binary compounds, because FEFOS uses them.
+
+| MAE on held-out chemical systems (eV/atom) | 0 | 1,000 | 10,000 | 43,392 (all) |
+|---|---|---|---|---|
+| FEFOS | **0.117** | 0.117 | 0.117 | 0.117 |
+| Magpie + gradient boosting | 0.339 | 0.166 | 0.098 | 0.073 |
+| Roost-style network | 0.187 | 0.110 | 0.075 | 0.059 |
+| **FEFOS + gradient boosting on its residual** | 0.160 | **0.094** | **0.071** | **0.056** |
+
+The column is the number of multi-cation DFT compounds used for training.
+
+* Given only binaries, the learned models cannot extrapolate to ternaries;
+  FEFOS's charge-neutral merge does. Gradient boosting needs about 5,000
+  multi-cation compounds to match FEFOS; the Roost-style network has passed
+  it by 1,000.
+* FEFOS is the best starting point for learning. Gradient boosting on FEFOS's
+  residual beats FEFOS from 100 training compounds and ends 23% below gradient
+  boosting alone.
+* Stability, using the test of Bartel et al., with distance to the hull of
+  all other MP phases recomputed self-consistently by `fefos.phase`, because
+  MP's published decomposition energies disagree with its formation energies
+  for about a quarter of stable compounds: FEFOS alone never predicts a
+  compound below the hull, since its prediction is the binary hull. ROC-AUC is
+  0.60 with the bond correction, 0.79 for gradient boosting, 0.83 for the
+  Roost-style network and 0.85 for FEFOS plus residual learning.
+* Speed: 45 µs per prediction in Python, about 3 µs in the JavaScript port in
+  the report, with no training.
+
+## Screening for new oxides
+
+`scripts/screen_oxides.py` combines every pair of metal cations at ratios 1:1,
+1:2, 2:1, 1:3 and 3:1, with oxygen set by charge balance from common oxidation
+states. That gives 15,935 ternary oxides, 13,439 of them not in MP. Each is
+scored by its predicted distance to the current MP hull of its A–B–O system,
+using FEFOS with the bond correction. Two guardrails apply: FEFOS's oxidation
+states must match a charge-balanced assignment, and the bond descriptors must
+lie inside the training range. 113 new compositions are predicted at least
+0.10 eV/atom below the hull (`results/screening.csv.gz`).
+
+On held-out two-cation oxides, 24% of compounds are stable at random. Of those
+FEFOS flags, 45% are stable. Of those the learned second opinion
+(`benchmarks/screen_crosscheck.py`) predicts stable, 71% are. When both agree,
+90% are stable, from 19 compounds. 16 new compositions pass both. They include:
+
+* **Rb–Ir–O** (Rb₂IrO₃, RbIrO₂, Rb₆Ir₂O₇, Rb₄Ir₂O₅): alkali iridates are an
+  OER-catalyst family, and no rubidium member turned up in the literature.
+* **Ln₃ReO₈** (Ln = Tb, Dy, Tm, Lu): a fluorite-type family reported
+  experimentally but missing from MP, so these are rediscoveries, as is
+  Ag₂Mo₄O₁₃, a known photocatalyst, from the FEFOS screen.
+
+The report discusses the catalytic relevance of each family, with sources.
+
 ## Install
 
 ```bash
@@ -168,11 +227,16 @@ model = FEFOS.from_binary_entries(
 ```bash
 python scripts/fetch_mp.py          # MP summary from AWS Open Data (no API key) -> data/mp_<version>/
 python scripts/run_benchmark.py     # -> results/benchmark_predictions.csv.gz, results/summary.json
-python scripts/make_report_data.py  # -> results/report_data.json
 # assumed bond lengths (pip install -e ".[structure]" for pymatgen)
 python scripts/compute_reference_bonds.py   # CrystalNN + bond valence on reference binaries
 python scripts/fetch_mp_bonds.py            # MP bond lengths of the benchmark compounds
 python scripts/bond_length_analysis.py      # -> bond_lengths.csv, bond_correction.csv, results/bond_lengths.json
+# machine-learning comparison and oxide screen (pip install -r benchmarks/requirements.txt)
+python benchmarks/features.py
+python benchmarks/run_related.py --roost    # -> results/related_work.json
+python scripts/screen_oxides.py             # -> results/screening.csv.gz
+python benchmarks/screen_calibration.py && python benchmarks/screen_crosscheck.py
+python scripts/make_report_data.py          # -> results/report_data.json (collects everything above)
 pytest
 ```
 
@@ -190,6 +254,7 @@ src/fefos/
   mixing.py       charge-neutral merging of curves for n cations (Eqs. 2–5)
   model.py        FEFOS model (linear / quadratic / paper modes)
   structure.py    assumed bond lengths, bond features and the bond-length correction
+  phase.py        self-consistent hull energies and decomposition energies (scipy)
   legacy.py       exact 2023 model with the published coefficients
   data.py         Materials Project open-data download and dataset building
   benchmark.py    benchmark runner and metrics
@@ -197,6 +262,7 @@ data/
   paper_2023/     published coefficients, references, predictions, benchmark set
   mp_2026-09-28/  binaries.csv (hull inputs), compounds.csv.gz (benchmark targets),
                   binary_bonds.csv, bond_lengths.csv, bond_correction.csv, bonds.csv.gz
+benchmarks/       machine-learning baselines (Magpie, Roost-style) and screen cross-checks
 results/          benchmark outputs
 ```
 

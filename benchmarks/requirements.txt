@@ -1,0 +1,5 @@
+scikit-learn>=1.4
+matminer>=0.9
+torch>=2.2
+pymatgen>=2024.1
+pyarrow>=14
