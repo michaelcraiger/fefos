@@ -84,7 +84,8 @@ the twelve anions. Two classes are harder:
 * **intermetallic-like compounds** with mean OS < 1: 0.55. These are outside
   the oxidation-state picture.
 
-Full tables: `results/summary.json`; per-compound predictions:
+The full validation report with figures is in `docs/validation_report.html`
+(download and open it in a browser). Full tables: `results/summary.json`; per-compound predictions:
 `results/benchmark_predictions.csv.gz`.
 
 ## Install
