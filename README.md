@@ -181,7 +181,10 @@ FEFOS flags, 45% are stable. Of those the learned second opinion
 90% are stable, from 19 compounds. 16 new compositions pass both. They include:
 
 * **Rb–Ir–O** (Rb₂IrO₃, RbIrO₂, Rb₆Ir₂O₇, Rb₄Ir₂O₅): alkali iridates are an
-  OER-catalyst family, and no rubidium member turned up in the literature.
+  OER-catalyst family. The only reported rubidium iridates are highly
+  oxidised Ir(V–VI) phases (Rb₅Ir₂O₉, Rb₇Ir₃O₁₂, Rb₁₂Ir₇O₂₄; Guo et al.,
+  Inorg. Chem. 2022, not in MP). These Ir(III/IV) compositions, and Rb₄IrO₄,
+  the missing member of the A₄IrO₄ family, are unreported.
 * **Ln₃ReO₈** (Ln = Tb, Dy, Tm, Lu): a fluorite-type family reported
   experimentally but missing from MP, so these are rediscoveries, as is
   Ag₂Mo₄O₁₃, a known photocatalyst, from the FEFOS screen.
