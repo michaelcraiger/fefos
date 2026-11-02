@@ -1,0 +1,627 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>FEFOS v2 Validation</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=JetBrains+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap">
+<style>
+/* Layout: lab-report reading column (~68ch) with figure cards that break out wider; cool slate paper, navy ink. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #fcfcfb;
+  --ink: #0e1621;
+  --ink-2: #485262;
+  --muted: #7b8390;
+  --rule: #dce1e7;
+  --grid: #e3e6ea;
+  --axis: #c1c7cf;
+  --accent: #1d5ca8;
+  --code-bg: #e8ecf1;
+  --s-linear: #2a78d6;
+  --s-quad: #eb6834;
+  --s-paper: #1baf7a;
+  --s-ref: #8a8f98;
+  --s-cr: #e87ba4;
+  --s-mo: #6250d6;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Serif 4", "Iowan Old Style", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --step--1: 0.8125rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.3rem;
+  --step-2: 1.75rem;
+  --step-3: clamp(2rem, 1.4rem + 2.6vw, 3.1rem);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1013; --surface: #1a1a19; --ink: #eef0f3; --ink-2: #b8bfc9; --muted: #8b919b;
+    --rule: #2a2f35; --grid: #2c2c2a; --axis: #3d3f42; --accent: #86b6ef; --code-bg: #1f242a;
+    --s-linear: #3987e5; --s-quad: #d95926; --s-paper: #199e70; --s-ref: #8a8f98; --s-cr: #d55181; --s-mo: #9085e9;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1013; --surface: #1a1a19; --ink: #eef0f3; --ink-2: #b8bfc9; --muted: #8b919b;
+  --rule: #2a2f35; --grid: #2c2c2a; --axis: #3d3f42; --accent: #86b6ef; --code-bg: #1f242a;
+  --s-linear: #3987e5; --s-quad: #d95926; --s-paper: #199e70; --s-ref: #8a8f98; --s-cr: #d55181; --s-mo: #9085e9;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--step-0);
+  line-height: 1.6;
+}
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 48px 72px;
+  display: grid;
+  gap: 56px;
+}
+.prose { max-width: 68ch; display: grid; gap: 16px; }
+.prose p { margin: 0; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.12; letter-spacing: -0.01em; }
+h1 { font-size: var(--step-3); font-weight: 700; }
+h2 { font-size: var(--step-2); font-weight: 700; }
+h3 { font-size: var(--step-1); font-weight: 600; }
+.eyebrow {
+  font-family: var(--font-ui); font-size: var(--step--1); letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--accent); font-weight: 600;
+}
+.lede { font-size: 1.2rem; color: var(--ink-2); max-width: 62ch; margin: 0; }
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+code, .mono { font-family: var(--font-mono); font-size: 0.86em; }
+code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
+sub { font-size: 0.72em; line-height: 0; }
+header.hero { display: grid; gap: 20px; }
+.verdict {
+  border-left: 3px solid var(--s-linear);
+  padding: 4px 0 4px 18px;
+  max-width: 70ch;
+  margin: 0;
+}
+.verdict strong { font-family: var(--font-display); font-weight: 600; }
+.tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.tile { border-top: 1px solid var(--rule); padding-top: 12px; display: grid; gap: 4px; align-content: start; }
+.tile .value { font-family: var(--font-display); font-size: 2.3rem; font-weight: 700; line-height: 1; }
+.tile .value small { font-size: 0.95rem; font-weight: 600; color: var(--ink-2); margin-left: 4px; }
+.tile .label { font-family: var(--font-ui); font-size: 0.875rem; color: var(--ink-2); line-height: 1.4; }
+section { display: grid; gap: 24px; }
+.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 10px; }
+.steps li::marker { font-family: var(--font-display); font-weight: 700; color: var(--accent); }
+.fig-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+figure {
+  margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px;
+  padding: 18px 18px 14px; display: grid; gap: 10px; min-width: 0;
+}
+figure h3 { font-size: 1.05rem; }
+figcaption { font-size: 0.9rem; color: var(--ink-2); line-height: 1.5; }
+.chart { width: 100%; min-width: 0; position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-family: var(--font-ui); font-size: 0.8125rem; color: var(--ink-2); }
+.legend .li { display: inline-flex; align-items: center; gap: 6px; }
+.key-line { width: 18px; height: 0; border-top: 2px solid; display: inline-block; }
+.key-line.dash { border-top-style: dashed; }
+.key-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.key-ring { width: 10px; height: 10px; border-radius: 50%; display: inline-block; border: 2px solid var(--s-ref); }
+.key-diamond { width: 9px; height: 9px; transform: rotate(45deg); display: inline-block; background: var(--ink); }
+.toggle { display: inline-flex; border: 1px solid var(--rule); border-radius: 8px; padding: 2px; gap: 2px; font-family: var(--font-ui); }
+.toggle button {
+  font: inherit; font-size: 0.8125rem; border: 0; background: transparent; color: var(--ink-2);
+  padding: 5px 10px; border-radius: 6px; cursor: pointer;
+}
+.toggle button[aria-pressed="true"] { background: var(--code-bg); color: var(--ink); font-weight: 600; }
+.fig-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; }
+.table-wrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-family: var(--font-ui); font-size: 0.875rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-weight: 600; color: var(--ink-2); font-size: 0.8125rem; border-bottom: 1px solid var(--axis); }
+td.best { font-weight: 700; }
+.cell-bar { display: grid; gap: 3px; justify-items: end; }
+.cell-bar i { display: block; height: 4px; border-radius: 0 2px 2px 0; background: var(--axis); justify-self: start; }
+td.best .cell-bar i { background: var(--s-linear); }
+.model { display: inline-flex; align-items: center; gap: 8px; }
+.formula { font-family: var(--font-mono); font-size: 0.85rem; }
+details { font-family: var(--font-ui); font-size: 0.875rem; }
+details summary { cursor: pointer; color: var(--accent); width: max-content; }
+details[open] summary { margin-bottom: 8px; }
+.findings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 32px; }
+.finding { display: grid; gap: 8px; align-content: start; border-top: 1px solid var(--rule); padding-top: 14px; }
+.finding p { margin: 0; color: var(--ink-2); }
+.finding h3 { font-size: 1.1rem; }
+footer { border-top: 1px solid var(--rule); padding-top: 20px; font-family: var(--font-ui); font-size: 0.875rem; color: var(--ink-2); display: grid; gap: 10px; max-width: 80ch; }
+footer p { margin: 0; }
+#tip {
+  position: fixed; pointer-events: none; z-index: 20; background: var(--surface); color: var(--ink);
+  border: 1px solid var(--rule); border-radius: 8px; padding: 8px 10px; font-family: var(--font-ui);
+  font-size: 0.8125rem; line-height: 1.45; box-shadow: 0 4px 16px rgba(14, 22, 33, 0.12);
+  font-variant-numeric: tabular-nums; max-width: 260px;
+}
+#tip .t-head { font-weight: 600; margin-bottom: 2px; }
+#tip .t-row { display: flex; align-items: center; gap: 6px; }
+#tip .t-row b { margin-left: auto; padding-left: 12px; font-weight: 600; }
+.axis-text { font-family: var(--font-ui); font-size: 11.5px; fill: var(--muted); }
+.axis-title { font-family: var(--font-ui); font-size: 12px; fill: var(--ink-2); }
+.label-text { font-family: var(--font-ui); font-size: 12px; fill: var(--ink); }
+.label-muted { font-family: var(--font-ui); font-size: 11.5px; fill: var(--ink-2); }
+@media (max-width: 760px) {
+  .fig-row, .findings { grid-template-columns: minmax(0, 1fr); }
+  .tiles { grid-template-columns: minmax(0, 1fr); }
+  .page { gap: 44px; padding-block: 32px 56px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .toggle button { transition: background-color 120ms ease; }
+}
+</style>
+
+<div class="page">
+  <header class="hero">
+    <div class="eyebrow">FEFOS v2 · Materials Project release 2026-09-28</div>
+    <h1>Oxidation-state curves predict formation energies beyond binary oxides</h1>
+    <p class="lede">FEFOS predicts a compound's formation energy from the binary compounds of its elements alone. This report checks that the rewritten code reproduces the 2023 paper, then tests the extension to any number of cations against every multi-cation compound in Materials Project with one of twelve anions.</p>
+    <p class="verdict"><strong>The idea holds and the extension works.</strong> On <span id="v-n"></span> ionic compounds with metal cations, across all twelve anions, FEFOS predicts formation energies with a mean absolute error of <span id="v-mae"></span> eV/atom. That is half the error of the reference average without charge transfer (<span id="v-ref"></span>). The error does not grow from two cations to five or more.</p>
+    <div class="tiles">
+      <div class="tile"><div class="value" id="t-repro"></div><div class="label">published 2023 predictions reproduced by the new code, to within 1×10<sup>−4</sup> eV/atom</div></div>
+      <div class="tile"><div class="value" id="t-mae"></div><div class="label">mean absolute error on ionic compounds with metal cations, all anions, 2–6 cations</div></div>
+      <div class="tile"><div class="value" id="t-n"></div><div class="label">multi-cation, single-anion MP compounds scored (lowest-energy polymorph per composition)</div></div>
+    </div>
+  </header>
+
+  <section aria-labelledby="h-method">
+    <div class="prose">
+      <h2 id="h-method">How FEFOS predicts an energy</h2>
+      <ol class="steps">
+        <li><strong>One curve per element and anion.</strong> Every binary compound M<sub>a</sub>X<sub>b</sub> sits at a formal oxidation state <span class="mono">q = v·b/a</span>, where <span class="mono">v</span> is the anion valence. The lower convex hull of formation energy against <span class="mono">q</span> describes how the element responds to oxidation and reduction.</li>
+        <li><strong>A common reference.</strong> All cations of a compound start at its mean oxidation state. The reference energy is the composition-weighted average of each element's hull at that state (Eq. 6 with ΔD = 0).</li>
+        <li><strong>Charge-neutral redistribution.</strong> Cations shift their oxidation states subject to <span class="mono">Σ c<sub>i</sub> d<sub>i</sub> = 0</span> (Eq. 2), and each shift is priced by that element's curve. The minimum is the mixing energy ΔD. Version 2 solves this exactly for any number of cations.</li>
+      </ol>
+      <p>Three variants are compared throughout. In the <strong>linear</strong> mode the curve is the hull itself. The <strong>quadratic</strong> mode uses the paper's Eq. 1 parabolas, <span class="mono">a<sub>1</sub>x² + a<sub>2</sub>x</span>, fitted to the hull and weighted by concentration. The <strong>paper</strong> mode keeps the 2023 merging rule, an unweighted sum with the end-member correction of Eq. 5, generalised to n cations. In every mode the curves are fitted automatically, so the eight hand-set coefficients of 2023 are gone.</p>
+    </div>
+    <div class="fig-row">
+      <figure>
+        <h3>Curves fitted to the hull, as in Fig. 1a</h3>
+        <div class="legend" aria-hidden="true">
+          <span class="li"><i class="key-line" style="border-color:var(--s-cr)"></i><span>Cr reduction from CrO<sub>2</sub></span></span>
+          <span class="li"><i class="key-line" style="border-color:var(--s-mo)"></i><span>Mo oxidation from MoO<sub>2</sub></span></span>
+          <span class="li"><i class="key-line dash" style="border-color:var(--s-mo)"></i><span>Mo oxidation, 2023 fit</span></span>
+          <span class="li"><i class="key-line" style="border-color:var(--s-ref)"></i><span>exact hull</span></span>
+        </div>
+        <div class="chart" id="c-curves" role="img" aria-label="Energy per atom relative to the MO2 reference against oxidation-state change for Cr reduction and Mo oxidation, with fitted parabolas and the exact hull."></div>
+        <figcaption>Energy per atom relative to CrO<sub>2</sub> and MoO<sub>2</sub> as the oxidation state changes by <span class="mono">x</span>. The automatic fit gives the Cr curve <span class="mono" id="cr-fit"></span>, the same as the published 0.319x² − 0.638x. The Mo curve now rises more steeply than in 2023 because today's MP energies put MoO<sub>3</sub> 0.18 eV/atom above MoO<sub>2</sub>.</figcaption>
+      </figure>
+      <figure>
+        <h3>Mixing energy across Mo<sub>1−z</sub>Cr<sub>z</sub>O<sub>2</sub>, as in Fig. 1d</h3>
+        <div class="legend" aria-hidden="true">
+          <span class="li"><i class="key-line" style="border-color:var(--s-linear)"></i>linear</span>
+          <span class="li"><i class="key-line" style="border-color:var(--s-quad)"></i>quadratic</span>
+          <span class="li"><i class="key-line" style="border-color:var(--s-paper)"></i>paper rule</span>
+          <span class="li"><i class="key-diamond"></i>MP compound</span>
+        </div>
+        <div class="chart" id="c-mix" role="img" aria-label="Predicted mixing energy against Cr fraction for three FEFOS modes, with the Materials Project value for CrMoO4."></div>
+        <figcaption>All three modes predict that Cr and Mo mix favourably in the rutile stoichiometry, with Cr reduced towards 3+ and Mo oxidised towards 5+. MP places CrMoO<sub>4</sub> at ΔD = <span id="crmo-mp"></span> eV/atom.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-repro">
+    <div class="prose">
+      <h2 id="h-repro">The 2023 paper, reproduced</h2>
+      <p>The <code>legacy</code> module reruns the original binary mixing rule with the published coefficients and reference oxides. It reproduces all <span id="r-n"></span> published predictions to within <span id="r-diff"></span> eV/atom, which is the rounding of the published table. The errors against the 2022 MP energies match the paper: <span id="r-mae"></span> eV/atom overall and <span id="r-mae-f"></span> for the <span id="r-nf"></span> coordination-filtered oxides. Exact agreement needed two details of the original notebook: concentrations were rounded to two decimals and snapped to a 0.02 grid, and the end-member subtraction was done separately for each oxidation direction.</p>
+      <p>The table below scores the same domain, two-cation oxides with mean oxidation state 2, 3 or 4, on today's MP energies. The published coefficients still give 0.161 eV/atom. Refitting the 2023 rule automatically to the 2026 hulls matches them without any hand tuning, and both new merging modes improve on them in every subset.</p>
+    </div>
+    <figure>
+      <div class="fig-head"><h3>Head-to-head on the 2023 domain</h3><span class="legend">mean absolute error, eV/atom · bold marks the lowest in each column</span></div>
+      <div class="table-wrap"><table id="t-h2h"></table></div>
+      <figcaption><span id="h2h-n"></span> two-cation oxides covered by the published coefficients. ICSD means MP marks the structure as experimentally reported; stable means on the MP convex hull; near hull means within 0.1 eV/atom of it.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="h-ext">
+    <div class="prose">
+      <h2 id="h-ext">Any anion, any number of cations</h2>
+      <p>The extension was scored on every multi-cation compound in MP whose most electronegative element is one of twelve anions. The fitting window for the quadratic and paper modes was chosen on the 2023 domain only and then applied unchanged everywhere else, so every result outside two-cation oxides is out of sample. The headline scope is ionic compounds with metal cations: mean oxidation state of at least 1, with no nonmetal acting as a cation.</p>
+    </div>
+    <div class="legend" aria-hidden="true">
+      <span class="li"><i class="key-dot" style="background:var(--s-linear)"></i>linear</span>
+      <span class="li"><i class="key-dot" style="background:var(--s-quad)"></i>quadratic</span>
+      <span class="li"><i class="key-dot" style="background:var(--s-paper)"></i>paper rule</span>
+      <span class="li"><i class="key-ring"></i>reference average (no charge transfer)</span>
+    </div>
+    <div class="fig-row">
+      <figure>
+        <h3>Error by anion</h3>
+        <div class="chart" id="c-anion" role="img" aria-label="Mean absolute error by anion for the three FEFOS modes and the reference average."></div>
+        <figcaption>Mean absolute error, eV/atom, with the number of compounds per anion. The linear mode stays between 0.07 and 0.19 eV/atom. Nitrides and carbides are hardest.</figcaption>
+        <details><summary>Show table</summary><div class="table-wrap"><table id="t-anion"></table></div></details>
+      </figure>
+      <figure>
+        <h3>Error by number of cations</h3>
+        <div class="chart" id="c-ncat" role="img" aria-label="Mean absolute error against number of cations for the three FEFOS modes and the reference average."></div>
+        <figcaption>Without charge transfer the error grows as more cations are mixed. With it, the error stays flat or falls. The 5+ group has <span id="n5"></span> compounds.</figcaption>
+        <details><summary>Show table</summary><div class="table-wrap"><table id="t-ncat"></table></div></details>
+      </figure>
+    </div>
+    <figure>
+      <div class="fig-head">
+        <h3>Predicted against MP formation energy</h3>
+        <div class="toggle" role="group" aria-label="Prediction shown">
+          <button type="button" id="b-lin" aria-pressed="true">FEFOS linear</button>
+          <button type="button" id="b-ref" aria-pressed="false">Reference average</button>
+        </div>
+      </div>
+      <div class="chart" id="c-parity" role="img" aria-label="Parity plot of predicted against Materials Project formation energy for 1,500 random ionic compounds."></div>
+      <figcaption>1,500 compounds drawn at random from the ionic, metal-cation scope. Hover a point for its formula. The reference average sits above the diagonal for most compounds; charge transfer brings them back onto it.</figcaption>
+    </figure>
+    <figure>
+      <div class="fig-head"><h3>Where it works and where it does not</h3><span class="legend">mean absolute error, eV/atom</span></div>
+      <div class="table-wrap"><table id="t-class"></table></div>
+      <figcaption>Polyanion and mixed-anion compounds have a nonmetal acting as a cation, as P does in phosphates and C in carbonates; their binaries with the anion are often molecular. Intermetallic-like compounds carry so little anion (mean oxidation state below 1) that oxidation states say little about their bonding.</figcaption>
+    </figure>
+  </section>
+
+  <section aria-labelledby="h-learn">
+    <div class="prose"><h2 id="h-learn">What the benchmark says about the method</h2></div>
+    <div class="findings">
+      <div class="finding">
+        <h3>Charge neutrality is the right way to merge curves</h3>
+        <p>Redistributing oxidation states under charge neutrality brings the error below the reference average for every anion, every cation count and every class of compound, and halves it for ionic compounds overall. This is the core FEFOS idea, and it carries over from binary oxides without change.</p>
+      </div>
+      <div class="finding">
+        <h3>The exact merge is the convex hull of the binaries</h3>
+        <p>With the hull itself as the curve, the charge-neutral minimum equals the energy of the most stable mixture of binary compounds. It agrees with pymatgen's phase-diagram code to 10<sup>−14</sup> eV/atom on 394 random compounds, and its Lagrange multiplier is the anion chemical potential. The paper's parabolas are a smooth two-coefficient summary of that hull, at a cost of about 0.016 eV/atom.</p>
+      </div>
+      <div class="finding">
+        <h3>Weight the curves by concentration</h3>
+        <p>The 2023 rule sums the curves without concentration weights. That works for binary oxides but roughly doubles the error on bromides and iodides relative to the linear mode. Concentration weights are what thermodynamics requires, and they are the default in v2.</p>
+      </div>
+      <div class="finding">
+        <h3>What is still missing</h3>
+        <p>Real compounds are more stable than their binary decomposition products: the linear prediction sits <span id="bias-stable"></span> eV/atom above MP on average for stable ionic compounds. Electronegativity spread explains little of this gap (r = <span id="chi-r"></span>). A reaction-energy term is the natural next addition, along with better handling of polyanions.</p>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-examples">
+    <div class="prose"><h2 id="h-examples">Familiar compounds</h2></div>
+    <figure>
+      <div class="table-wrap"><table id="t-examples"></table></div>
+      <figcaption>Formation energies in eV/atom. Oxidation states come from the linear mode. They are formal: when a binary hull includes a peroxide or a metal, as Li–O does, a cation can come out non-integer, as Co and Li do in LiCoO<sub>2</sub>. For CuFeS<sub>2</sub> the most stable binary mixture is Cu metal with FeS<sub>2</sub>.</figcaption>
+    </figure>
+  </section>
+
+  <footer>
+    <p><strong>Code.</strong> <a href="https://github.com/michaelcraiger/fefos/pull/6">github.com/michaelcraiger/fefos, pull request #6</a> (branch <code>fefos-v2</code>). The 2023 notebooks and data remain under the tag <a href="https://github.com/michaelcraiger/fefos/tree/paper-2023"><code>paper-2023</code></a>.</p>
+    <p><strong>Data.</strong> Materials Project summary, release 2026-09-28, read from the public AWS Open Data bucket. <span id="f-bin"></span> binary compounds build <span id="f-hulls"></span> element–anion hulls; the lowest-energy polymorph of each composition is the target. Paper: Craig, Kleuker, Bajdich and García-Melchor, <a href="https://doi.org/10.1039/D3CY00107E">Catal. Sci. Technol. 13, 3427 (2023)</a>.</p>
+    <p><strong>Reproduce.</strong> <code>python scripts/fetch_mp.py && python scripts/run_benchmark.py && python scripts/make_report_data.py</code></p>
+  </footer>
+</div>
+<div id="tip" hidden></div>
+
+<script type="application/json" id="data">{"mp_version":"2026-09-28","n_binaries":8550,"n_hulls":894,"n_compounds":108808,"n_representable":107600,"reproduction":{"n":2327,"max_abs_difference":9.583947315228158e-05,"mae_all":0.16131869582146363,"mae_coordination_filtered":0.10659635545252732,"n_coordination_filtered":637,"mae_reference_average":0.23976391571295325},"head_to_head":{"all":{"fefos_2023":{"n":2735,"mae":0.1615,"rmse":0.2567,"median_ae":0.092,"r2":0.9023,"bias":0.0006},"fefos_paper":{"n":2735,"mae":0.1603,"rmse":0.2538,"median_ae":0.0928,"r2":0.9044,"bias":-0.0176},"fefos_quadratic":{"n":2735,"mae":0.1475,"rmse":0.2368,"median_ae":0.0888,"r2":0.9169,"bias":-0.0354},"fefos_linear":{"n":2735,"mae":0.14,"rmse":0.2323,"median_ae":0.0826,"r2":0.9199,"bias":-0.0454},"reference_average":{"n":2735,"mae":0.2121,"rmse":0.3171,"median_ae":0.1281,"r2":0.8508,"bias":0.0584}},"ICSD (experimental)":{"fefos_2023":{"n":951,"mae":0.1595,"rmse":0.2368,"median_ae":0.1044,"r2":0.9079,"bias":0.1099},"fefos_paper":{"n":951,"mae":0.1511,"rmse":0.2263,"median_ae":0.094,"r2":0.9158,"bias":0.1032},"fefos_quadratic":{"n":951,"mae":0.1335,"rmse":0.1891,"median_ae":0.0938,"r2":0.9413,"bias":0.0876},"fefos_linear":{"n":951,"mae":0.1174,"rmse":0.1735,"median_ae":0.0788,"r2":0.9505,"bias":0.0694},"reference_average":{"n":951,"mae":0.2552,"rmse":0.3516,"median_ae":0.1922,"r2":0.7969,"bias":0.2175}},"stable (on MP hull)":{"fefos_2023":{"n":991,"mae":0.1868,"rmse":0.2545,"median_ae":0.1301,"r2":0.8935,"bias":0.1068},"fefos_paper":{"n":991,"mae":0.1749,"rmse":0.2417,"median_ae":0.1125,"r2":0.9039,"bias":0.1022},"fefos_quadratic":{"n":991,"mae":0.1502,"rmse":0.1874,"median_ae":0.1245,"r2":0.9422,"bias":0.103},"fefos_linear":{"n":991,"mae":0.1321,"rmse":0.1692,"median_ae":0.1073,"r2":0.9529,"bias":0.0833},"reference_average":{"n":991,"mae":0.279,"rmse":0.3687,"median_ae":0.2236,"r2":0.7763,"bias":0.2423}},"near hull (<0.1 eV/atom)":{"fefos_2023":{"n":2090,"mae":0.132,"rmse":0.2029,"median_ae":0.071,"r2":0.9398,"bias":0.064},"fefos_paper":{"n":2090,"mae":0.1242,"rmse":0.1883,"median_ae":0.0693,"r2":0.9481,"bias":0.0546},"fefos_quadratic":{"n":2090,"mae":0.101,"rmse":0.141,"median_ae":0.0674,"r2":0.9709,"bias":0.0431},"fefos_linear":{"n":2090,"mae":0.0906,"rmse":0.1279,"median_ae":0.0621,"r2":0.9761,"bias":0.031},"reference_average":{"n":2090,"mae":0.1919,"rmse":0.2882,"median_ae":0.0921,"r2":0.8785,"bias":0.1459}}},"scope":{"ionic, metal cations":{"fefos_paper":{"n":56428,"mae":0.1597,"rmse":0.2354,"median_ae":0.1173,"r2":0.9419,"bias":0.0436},"fefos_quadratic":{"n":56428,"mae":0.1368,"rmse":0.207,"median_ae":0.1048,"r2":0.9551,"bias":0.0398},"fefos_linear":{"n":56428,"mae":0.1207,"rmse":0.1975,"median_ae":0.0825,"r2":0.9591,"bias":0.0067},"reference_average":{"n":56428,"mae":0.2342,"rmse":0.3183,"median_ae":0.1831,"r2":0.8937,"bias":0.1647}},"stable (on MP hull)":{"fefos_paper":{"n":29398,"mae":0.1665,"rmse":0.2204,"median_ae":0.1363,"r2":0.9491,"bias":0.1096},"fefos_quadratic":{"n":29398,"mae":0.1335,"rmse":0.1672,"median_ae":0.1153,"r2":0.9707,"bias":0.1027},"fefos_linear":{"n":29398,"mae":0.1118,"rmse":0.1458,"median_ae":0.0896,"r2":0.9777,"bias":0.0724},"reference_average":{"n":29398,"mae":0.2421,"rmse":0.3143,"median_ae":0.1975,"r2":0.8965,"bias":0.2248}},"ICSD (experimental)":{"fefos_paper":{"n":9968,"mae":0.167,"rmse":0.2551,"median_ae":0.1158,"r2":0.9338,"bias":0.1078},"fefos_quadratic":{"n":9968,"mae":0.1528,"rmse":0.2243,"median_ae":0.125,"r2":0.9488,"bias":0.1062},"fefos_linear":{"n":9968,"mae":0.1202,"rmse":0.2012,"median_ae":0.0806,"r2":0.9588,"bias":0.0681},"reference_average":{"n":9968,"mae":0.2765,"rmse":0.3698,"median_ae":0.2156,"r2":0.8608,"bias":0.2379}},"near hull (<0.1 eV/atom)":{"fefos_paper":{"n":46188,"mae":0.1462,"rmse":0.1999,"median_ae":0.1096,"r2":0.9571,"bias":0.0919},"fefos_quadratic":{"n":46188,"mae":0.1195,"rmse":0.1529,"median_ae":0.0993,"r2":0.9749,"bias":0.0905},"fefos_linear":{"n":46188,"mae":0.0961,"rmse":0.1298,"median_ae":0.0716,"r2":0.9819,"bias":0.0567},"reference_average":{"n":46188,"mae":0.2339,"rmse":0.3072,"median_ae":0.1875,"r2":0.8986,"bias":0.217}}},"by_anion":{"Br":{"n":1929,"fefos_paper":0.1568,"fefos_quadratic":0.0824,"fefos_linear":0.0704,"reference_average":0.1918},"C":{"n":2378,"fefos_paper":0.209,"fefos_quadratic":0.1834,"fefos_linear":0.1758,"reference_average":0.2198},"Cl":{"n":1842,"fefos_paper":0.1224,"fefos_quadratic":0.1235,"fefos_linear":0.0821,"reference_average":0.279},"F":{"n":4090,"fefos_paper":0.1431,"fefos_quadratic":0.1626,"fefos_linear":0.0917,"reference_average":0.4058},"H":{"n":1076,"fefos_paper":0.0702,"fefos_quadratic":0.0646,"fefos_linear":0.0654,"reference_average":0.0835},"I":{"n":1725,"fefos_paper":0.1742,"fefos_quadratic":0.0725,"fefos_linear":0.075,"reference_average":0.1791},"N":{"n":3555,"fefos_paper":0.1998,"fefos_quadratic":0.1877,"fefos_linear":0.1856,"reference_average":0.2174},"O":{"n":26692,"fefos_paper":0.1675,"fefos_quadratic":0.149,"fefos_linear":0.134,"reference_average":0.2528},"P":{"n":2670,"fefos_paper":0.1895,"fefos_quadratic":0.1134,"fefos_linear":0.1072,"reference_average":0.2095},"S":{"n":5022,"fefos_paper":0.1218,"fefos_quadratic":0.1012,"fefos_linear":0.0952,"reference_average":0.1482},"Se":{"n":3883,"fefos_paper":0.128,"fefos_quadratic":0.1044,"fefos_linear":0.094,"reference_average":0.1664},"Te":{"n":1566,"fefos_paper":0.1493,"fefos_quadratic":0.1126,"fefos_linear":0.1069,"reference_average":0.1787}},"by_n_cations":{"2":{"n":23960,"fefos_paper":0.1625,"fefos_quadratic":0.1451,"fefos_linear":0.1293,"reference_average":0.221},"3":{"n":28526,"fefos_paper":0.1598,"fefos_quadratic":0.1316,"fefos_linear":0.1153,"reference_average":0.2404},"4":{"n":3838,"fefos_paper":0.1431,"fefos_quadratic":0.1244,"fefos_linear":0.1075,"reference_average":0.2709},"5":{"n":104,"fefos_paper":0.1198,"fefos_quadratic":0.1261,"fefos_linear":0.1085,"reference_average":0.2433}},"classes":{"ionic, metal cations":{"fefos_paper":{"n":56428,"mae":0.1597,"rmse":0.2354,"median_ae":0.1173,"r2":0.9419,"bias":0.0436},"fefos_quadratic":{"n":56428,"mae":0.1368,"rmse":0.207,"median_ae":0.1048,"r2":0.9551,"bias":0.0398},"fefos_linear":{"n":56428,"mae":0.1207,"rmse":0.1975,"median_ae":0.0825,"r2":0.9591,"bias":0.0067},"reference_average":{"n":56428,"mae":0.2342,"rmse":0.3183,"median_ae":0.1831,"r2":0.8937,"bias":0.1647}},"polyanion / mixed anion":{"fefos_paper":{"n":33394,"mae":0.3262,"rmse":0.4298,"median_ae":0.2686,"r2":0.7535,"bias":0.2032},"fefos_quadratic":{"n":33394,"mae":0.2601,"rmse":0.3368,"median_ae":0.222,"r2":0.8486,"bias":0.1241},"fefos_linear":{"n":33394,"mae":0.2313,"rmse":0.3163,"median_ae":0.1861,"r2":0.8665,"bias":0.0829},"reference_average":{"n":33394,"mae":0.4481,"rmse":0.543,"median_ae":0.3996,"r2":0.6065,"bias":0.3518}},"intermetallic-like (mean OS < 1)":{"fefos_paper":{"n":17778,"mae":0.8443,"rmse":1.0793,"median_ae":0.6782,"r2":-0.7662,"bias":0.7766},"fefos_quadratic":{"n":17778,"mae":0.5484,"rmse":0.7693,"median_ae":0.3952,"r2":0.1028,"bias":0.4363},"fefos_linear":{"n":17778,"mae":0.5472,"rmse":0.7691,"median_ae":0.3935,"r2":0.1032,"bias":0.4277},"reference_average":{"n":17778,"mae":0.719,"rmse":0.9499,"median_ae":0.5674,"r2":-0.3679,"bias":0.6412}}},"parity_extension":[["Fe10CoN8","N",2,0.225,-0.043,-0.042],["Nb4Tl4O13","O",2,-2.355,-2.334,-1.886],["Ce(TaS2)3","S",2,-1.543,-1.597,-1.597],["Ca3Tl2O6","O",2,-2.316,-2.303,-2.223],["Cs2InSbF6","F",3,-2.644,-2.624,-2.25],["CaFeBiO5","O",3,-1.943,-1.908,-1.891],["Pr2Fe12P7","P",2,-0.627,-0.663,-0.558],["MgV2Pb3O8","O",3,-2.054,-2.145,-1.962],["Sr(LuSe2)2","Se",2,-2.235,-2.207,-2.063],["Pr5NbPdO12","O",3,-3.069,-3.127,-2.955],["YbPr6FeBr12","Br",3,-1.772,-1.87,-1.707],["KSm(MoO4)2","O",3,-2.538,-2.244,-2.107],["RbBaCrH6","H",3,-0.389,-0.25,-0.25],["Li2MnNiO4","O",3,-1.909,-1.761,-1.638],["PdRu3(Pb2O7)2","O",3,-1.126,-1.341,-1.287],["CsFe2S3","S",2,-0.942,-0.619,-0.619],["LiTi3O6","O",2,-3.292,-3.241,-2.811],["KSrPrFeO6","O",4,-2.175,-2.277,-2.275],["Mg4NpNb7N12","N",3,-1.316,-1.177,-1.125],["LiEu2(SnP)6","P",3,-0.51,-0.49,-0.294],["Zn2Sn2O5","O",2,-1.56,-1.861,-1.691],["CaPrO3","O",2,-3.012,-3.188,-3.188],["TmVF7","F",2,-3.712,-3.5,-3.381],["SrNdHfTiO6","O",4,-3.567,-3.592,-3.314],["Cs2FeO4","O",2,-1.439,-1.351,-1.303],["Tb5Er(BiO7)2","O",3,-3.039,-3.122,-3.116],["SrGaCu3Se4","Se",3,-0.606,-0.797,-0.654],["CaTiNbInO6","O",4,-2.862,-2.946,-2.649],["Cs4SnO4","O",2,-1.744,-1.489,-1.257],["Li11(MoO2)12","O",2,-1.944,-1.967,-1.615],["Rb2Ag2SnSe4","Se",3,-0.773,-0.701,-0.647],["CsPr2Cl7","Cl",2,-2.688,-2.655,-2.165],["LiTl3(MoO4)2","O",3,-1.81,-1.606,-1.375],["HfZr2HgC2","C",3,-0.868,-0.738,-0.551],["SrTbEuWO6","O",4,-2.995,-3.092,-2.96],["Sr6IrRh4O15","O",3,-1.987,-2.057,-1.941],["In4PdPt3O14","O",3,-1.274,-1.385,-1.334],["KHo3F10","F",2,-4.295,-4.24,-3.646],["Ca(GaP)2","P",2,-0.797,-0.713,-0.693],["TbNiOs2C","C",3,-0.328,-0.185,-0.063],["CaIrO3","O",2,-2.102,-2.079,-1.891],["Ag3AuS2","S",2,-0.095,-0.118,-0.118],["Li13Co15O28","O",2,-1.62,-1.576,-1.447],["Y2Mn2Ni10P7","P",3,-0.858,-0.751,-0.606],["CsZnNiF6","F",3,-2.445,-2.313,-2.283],["AlCuTe2","Te",2,-0.425,-0.37,-0.275],["Cs6NbSbS8","S",3,-1.284,-1.084,-1.013],["Rb5(WO3)18","O",2,-2.237,-2.076,-1.848],["VAgO3","O",2,-1.764,-1.697,-1.455],["Zn3InGaO6","O",3,-1.947,-1.946,-1.752],["RbCdF3","F",2,-2.696,-2.629,-2.334],["SrEuZrGeO6","O",4,-3.132,-3.106,-2.847],["Ca3Mn2(IrO6)2","O",3,-2.067,-2.025,-1.936],["Li3MnV4O12","O",3,-2.38,-2.273,-2.02],["Mg3(BiN2)2","N",2,-0.193,-0.523,-0.523],["Tl3SbS4","S",2,-0.544,-0.438,-0.437],["Na8Mg(FeO4)2","O",3,-1.746,-1.67,-1.447],["K2Mg(Zr2Se5)2","Se",3,-1.598,-1.508,-1.397],["Cs2LiCeF6","F",3,-3.51,-3.523,-2.657],["Rb2LiPrCl6","Cl",3,-2.431,-2.428,-1.877],["CrNiF6","F",2,-2.534,-2.498,-2.438],["SrCr2O10","O",2,-1.115,-1.467,-1.467],["K12AlGaP6","P",3,-0.508,-0.394,-0.381],["SrNdV4O12","O",3,-2.637,-2.623,-2.576],["Cs4USe5","Se",2,-1.409,-1.285,-1.158],["AlFeO3","O",2,-2.534,-2.567,-2.567],["Ta2MoPbS6","S",3,-1.086,-1.124,-1.01],["VCu3Te4","Te",2,-0.453,-0.27,-0.202],["SrCa7Ti2Mn6O24","O",4,-2.749,-2.657,-2.485],["Cr4In2(CuSe4)3","Se",3,-0.679,-0.625,-0.549],["K2VCuSe4","Se",3,-1.137,-0.926,-0.832],["CaHfN2","N",2,-1.876,-1.551,-1.411],["Li2TiNiO4","O",3,-2.506,-2.393,-1.857],["Ba6Tb(LuS4)3","S",3,-2.412,-2.349,-2.197],["TmMn5P3","P",2,-0.821,-0.824,-0.722],["Sr(InP)2","P",2,-0.583,-0.627,-0.597],["K2(IrO3)3","O",2,-1.07,-1.208,-1.145],["CsLi2Cl3","Cl",2,-2.177,-2.179,-2.179],["Cu4Sn15S32","S",2,-0.396,-0.444,-0.418],["SrCaMnGaO5","O",4,-2.697,-2.608,-2.468],["Mn5CuO12","O",2,-1.558,-1.637,-1.637],["RbZr2V3O12","O",3,-2.95,-2.719,-2.694],["LiMn3CrO8","O",3,-2.022,-1.955,-1.898],["K2US3","S",2,-1.728,-1.516,-1.292],["RbNa5(BeH3)6","H",3,-0.258,-0.169,-0.155],["Rb7VN4","N",2,0.001,-0.362,-0.295],["Ba2PrGaSe5","Se",3,-1.893,-1.833,-1.748],["Sr6ZrCo4O15","O",3,-2.47,-2.375,-2.244],["Rb2ReH9","H",2,-0.319,-0.078,-0.078],["Rb2TlIrF6","F",3,-2.309,-2.202,-2.05],["La2Pd2O7","O",2,-2.059,-2.159,-2.131],["K2LiNdI6","I",3,-1.577,-1.629,-1.307],["CaNpO4","O",2,-3.281,-3.114,-2.904],["Y2PaS3","S",2,-2.072,-1.995,-1.958],["SrCaYBiO6","O",4,-2.838,-2.731,-2.699],["Ho3Bi(PbS4)2","S",3,-1.543,-1.532,-1.429],["K3AlBr6","Br",2,-1.758,-1.818,-1.521],["Cs2RbFeF6","F",3,-2.925,-2.768,-2.341],["AlCdInS4","S",3,-0.868,-0.929,-0.857],["K3Er7S12","S",2,-2.261,-2.137,-1.913],["Dy3Cd(OsO4)4","O",3,-1.987,-2.224,-2.035],["CdAgO2","O",2,-0.869,-0.894,-0.894],["RbVSe2","Se",2,-1.163,-1.036,-0.985],["YPa(ReN3)2","N",3,-0.993,-0.941,-0.903],["Er3RuO7","O",2,-3.118,-3.199,-3.114],["BaSrCaWO6","O",4,-3.02,-2.711,-2.366],["U2NiO6","O",2,-3.174,-3.211,-2.772],["Mg2Ta3N5","N",2,-1.252,-1.201,-1.129],["MnCoN2","N",2,-0.325,-0.163,-0.163],["EuTh(SbTe)2","Te",3,-1.272,-1.075,-0.648],["Pr5MnRhO12","O",3,-2.864,-2.934,-2.893],["BaAg8S5","S",2,-0.455,-0.435,-0.287],["Cs2Ti2S9","S",2,-1.127,-1.08,-1.074],["KSrCeSbO6","O",4,-2.853,-2.602,-2.296],["GdTa4O12","O",2,-3.312,-3.329,-3.219],["Zn4AgN3","N",2,0.188,-0.036,-0.032],["Pr6YGeI12","I",3,-1.544,-1.411,-1.296],["AgSnIrS4","S",3,-0.503,-0.419,-0.338],["LiMnGaF6","F",3,-3.03,-2.993,-2.559],["KCaTm2CuSe5","Se",4,-1.869,-1.783,-1.493],["LaMn4(BiO4)3","O",3,-2.111,-2.107,-2.107],["Na4PrUTe6","Te",3,-1.257,-1.205,-1.019],["Na(VS2)2","S",2,-1.184,-1.121,-1.087],["Th2V3Co9P7","P",3,-0.881,-0.72,-0.608],["DyTh7TiS17","S",3,-2.235,-2.227,-2.169],["Ca2NiIrO6","O",3,-2.094,-1.959,-1.851],["Tb3Dy2Bi3O14","O",3,-2.745,-2.865,-2.856],["ThTaNb3C4","C",3,-0.611,-0.586,-0.579],["CsPd2Cl5","Cl",2,-1.26,-1.232,-1.12],["SrPa4O11","O",2,-3.854,-3.64,-3.58],["Li2CuSbF6","F",3,-2.174,-2.612,-2.21],["LaUO4","O",2,-3.918,-3.784,-3.49],["K4MoRuO8","O",3,-1.897,-1.498,-1.284],["Ho5NiRuO12","O",3,-3.01,-3.069,-2.976],["SrMnO3","O",2,-2.499,-2.324,-2.283],["Cs3ZnBr5","Br",2,-1.839,-1.79,-1.691],["Ca2DyPaN4","N",3,-1.771,-1.551,-1.382],["Li5Ni5(SbO6)2","O",3,-1.73,-1.637,-1.438],["Ba3NaSr(SbO4)3","O",4,-2.522,-2.17,-2.011],["Zr(NbSe2)5","Se",2,-1.125,-1.122,-1.105],["Eu(CdP)2","P",2,-0.738,-0.602,-0.404],["Yb(CoO2)3","O",2,-1.97,-1.971,-1.971],["Mg3V2(BiO6)2","O",3,-2.189,-2.264,-2.133],["CeHo5BiO12","O",3,-3.417,-3.5,-3.435],["LiUI6","I",2,-1.163,-1.074,-0.927],["Ca(TbS2)2","S",2,-2.381,-2.404,-2.276],["RbHo(WO4)2","O",3,-2.672,-2.441,-2.116],["SmThN2","N",2,-1.801,-1.769,-1.769],["RbLa6TcBr12","Br",3,-1.948,-1.998,-1.75],["CuMo2O7","O",2,-1.65,-1.728,-1.568],["TbFeC2","C",2,-0.254,-0.277,-0.232],["La4Au2O9","O",2,-2.841,-2.737,-2.737],["SrNd6IrBr12","Br",3,-1.996,-1.916,-1.739],["Ba8U2PdSe16","Se",3,-1.81,-1.791,-1.688],["GeIr2Se5","Se",2,-0.465,-0.456,-0.447],["LiNiP","P",2,-0.66,-0.629,-0.611],["Nd(YTe2)2","Te",2,-1.703,-1.69,-1.69],["Sm3Gd2PuH18","H",3,-0.675,-0.671,-0.671],["Li4GeSe4","Se",2,-1.106,-1.161,-1.048],["BaNd2ZnO5","O",3,-3.132,-3.119,-2.793],["CsCrSn3O8","O",3,-1.976,-2.05,-1.851],["TiInRh3Se8","Se",3,-0.76,-0.757,-0.731],["Tm2MoWN6","N",3,-1.215,-1.111,-1.111],["Sr2PrGaO5","O",3,-3.068,-3.033,-2.781],["BaTmGe4N7","N",3,-0.762,-0.579,-0.549],["Cs2CaBr4","Br",2,-2.238,-2.202,-1.926],["Ca2Ta2NiO8","O",3,-3.035,-3.007,-2.359],["CrFe(TcO4)6","O",3,-1.573,-1.836,-1.693],["BaSrCaMnO6","O",4,-2.465,-2.468,-2.405],["Gd2Mo5O18","O",2,-2.4,-2.319,-2.2],["CsK2AuF6","F",3,-2.21,-2.264,-2.058],["Li24MnCr11O36","O",3,-2.23,-2.045,-1.759],["K4MgV6O16","O",3,-2.42,-2.234,-2.0],["BaNb5O8","O",2,-2.793,-2.621,-2.544],["ZnBiPt2O7","O",3,-1.0,-1.229,-1.165],["Ba6Tm2Ga4O15","O",3,-3.0,-2.838,-2.62],["U(WC)2","C",2,1.389,-0.176,-0.15],["Ca(PrTe2)2","Te",2,-1.754,-1.774,-1.684],["Nb6AgSe8","Se",2,-0.972,-0.931,-0.834],["CeEu2WO6","O",3,-3.011,-3.211,-3.13],["CaTiGeO5","O",3,-3.049,-2.951,-2.628],["MgAlFeO4","O",3,-2.7,-2.702,-2.503],["Th4Ti(TcN4)3","N",3,-1.194,-1.126,-1.126],["TbTmReC2","C",3,-0.585,-0.399,-0.334],["CsNd(NbBr3)6","Br",3,-1.34,-1.489,-1.399],["CsHfMg6O7","O",3,-2.566,-2.833,-2.63],["Yb3Er(OsC2)2","C",3,-0.495,-0.348,-0.307],["La6Ge3Se14","Se",2,-1.662,-1.718,-1.713],["Na(CrS2)2","S",2,-1.041,-1.01,-0.954],["Rb2Mn2CdSe4","Se",3,-1.131,-1.011,-0.958],["Cs4Au6S5","S",2,-0.781,-0.619,-0.548],["Ba4Li2Mo2O11","O",3,-2.686,-2.311,-2.051],["RbBeBiF6","F",3,-3.046,-3.061,-2.733],["Li4Nb3Cr5O16","O",3,-2.542,-2.505,-2.052],["TaTi3(CoP)4","P",3,-1.041,-0.81,-0.725],["Mg2Mn3CoS8","S",3,-0.976,-1.069,-1.057],["K3LiNb6O15","O",3,-2.762,-2.616,-2.059],["LuTlO3","O",2,-2.528,-2.612,-2.612],["KY3O6","O",2,-0.084,-3.244,-3.244],["Np(Mo3Se4)2","Se",2,-0.793,-0.805,-0.767],["Ca2Cr2O5","O",2,-2.683,-2.784,-2.565],["Sr2Li2Nb4O13","O",3,-3.089,-2.903,-2.294],["Ba2Mg2Tl2Fe3O10","O",4,-1.898,-2.073,-1.98],["HoSc(NbSe2)8","Se",3,-1.236,-1.218,-1.212],["Ca3ReH7","H",2,-0.562,-0.546,-0.477],["CaLa2BiO6","O",3,-2.992,-3.037,-3.01],["Co3TcMo2P3","P",3,-0.548,-0.455,-0.429],["Cs4PbO3","O",2,-1.366,-1.253,-1.173],["Na2La2PtO6","O",3,-2.557,-2.403,-2.044],["CsSnS3","S",2,-0.839,-0.728,-0.722],["Li2(VS2)3","S",2,-1.249,-1.216,-1.134],["Ca4TaN4","N",2,-1.308,-1.052,-0.975],["Gd4Hf3O12","O",2,-3.859,-3.954,-3.682],["Ti3Fe5P4","P",2,-0.913,-0.762,-0.709],["LiTb2(Co3P2)3","P",3,-0.796,-0.721,-0.573],["BaSrHf2O6","O",3,-3.778,-3.585,-3.049],["Ca3Re3N5","N",2,-0.517,-0.512,-0.479],["MgZn2(BiO3)4","O",3,-1.548,-1.619,-1.599],["BaMgCoF7","F",3,-3.213,-3.247,-3.152],["TaZn2SnO6","O",3,-2.194,-2.367,-1.899],["V2Bi4O11","O",2,-1.99,-1.908,-1.862],["KYb(Pd3O4)2","O",3,-1.292,-1.341,-1.175],["Nd4GeI6","I",2,-1.547,-1.275,-1.117],["YPa(NbN3)2","N",3,-1.479,-1.435,-1.397],["Ir2RuO6","O",2,-1.027,-1.326,-1.326],["NdNp3Se4","Se",2,-1.851,-1.769,-1.769],["Li3Fe2CoO6","O",3,-1.867,-1.754,-1.531],["Ac3EuI10","I",2,-1.786,-1.797,-1.722],["Ta9Mn11O34","O",2,-2.152,-2.8,-2.388],["Cs2TlCoF6","F",3,-2.503,-2.451,-2.177],["Ba8Fe3N8","N",2,-0.616,-0.476,-0.403],["Mg(WS2)2","S",2,-0.498,-1.042,-0.979],["ZnTcF6","F",2,-2.493,-2.427,-2.064],["Sr3LiSbO6","O",3,-2.777,-2.515,-2.323],["Rb3Nb2Br9","Br",2,-1.632,-1.624,-1.335],["Fe3W5N8","N",2,-0.195,-0.449,-0.306],["Cs2Zr3(CuSe4)2","Se",3,-1.397,-1.251,-1.042],["Nd19Ti20O60","O",2,-3.59,-3.552,-3.519],["MnNi5N4","N",2,0.012,-0.065,-0.065],["Ho4ReRuC4","C",3,-0.546,-0.255,-0.208],["Tm3Sb5O12","O",2,-2.682,-2.629,-2.629],["Ac(YSe2)3","Se",2,-2.255,-2.242,-2.242],["TiCr3GaS8","S",3,-1.11,-1.077,-1.053],["Tb3GeS2","S",2,-1.95,-1.514,-1.219],["BaGdZn3GaO7","O",4,-2.373,-2.441,-2.189],["Cs2ZnN12","N",2,-0.104,-0.12,-0.12],["Sr2Mg(MoO4)2","O",3,-2.525,-2.492,-2.234],["GdLu(ThH5)6","H",3,-0.591,-0.568,-0.568],["NbSbF10","F",2,-2.979,-2.964,-2.964],["Eu5(SnSe4)3","Se",2,-1.393,-1.369,-1.342],["TlSbWO6","O",3,-1.932,-1.809,-1.608],["Ca2Ta2CrO8","O",3,-3.172,-3.123,-2.63],["RbBiO3","O",2,-1.448,-1.379,-1.359],["Al4Sb2O9","O",2,-2.733,-2.868,-2.868],["K2Be3Co2F12","F",3,-2.988,-3.043,-2.734],["HfTiO4","O",2,-3.726,-3.764,-3.764],["Dy6Mg(Sb5O12)2","O",3,-2.552,-2.61,-2.533],["LiPrO2","O",2,-3.095,-3.104,-2.379],["RbYCr2O8","O",3,-2.392,-2.1,-2.091],["BaYTc4N7","N",3,-0.677,-0.559,-0.512],["Tl2V3O8","O",2,-2.138,-2.055,-1.942],["Pr(MoC)4","C",2,-0.238,-0.184,-0.169],["KBaEu6F20","F",3,-3.953,-3.805,-3.617],["TbSm2BiO7","O",3,-2.991,-3.059,-3.053],["SrNd6CoI12","I",3,-1.51,-1.463,-1.299],["Mg2TiIrO6","O",3,-2.544,-2.646,-2.325],["Sr6Ca2Co5(CuO8)3","O",4,-1.871,-1.864,-1.847],["HoNb8NiSe16","Se",3,-1.077,-1.073,-1.057],["Ca2InOsO6","O",3,-2.386,-2.314,-2.124],["K2NbS7","S",2,-1.111,-0.941,-0.91],["NaPrHf2O6","O",3,-3.532,-3.558,-3.007],["MgMn4FeO8","O",3,-1.986,-2.124,-2.075],["Dy2TiCuO6","O",3,-3.118,-3.243,-3.041],["CsK2TiF6","F",3,-3.18,-3.209,-2.529],["BiRuF7","F",2,-2.236,-2.335,-2.25],["Cr2CdSe4","Se",2,-0.827,-0.818,-0.765],["Ca2Mo3O8","O",2,-2.451,-2.475,-2.184],["RbAlO2","O",2,-2.861,-2.567,-2.044],["CsMgBiO3","O",3,-1.884,-1.992,-1.877],["SnPbS3","S",2,-0.536,-0.544,-0.496],["YFeF5","F",2,-3.501,-3.633,-3.414],["Cs3SbO4","O",2,-1.891,-1.438,-1.283],["Cs4NbRhBr12","Br",3,-1.43,-1.539,-1.395],["MgMn3Te4","Te",2,-0.476,-0.726,-0.726],["ReHgO4","O",2,-1.758,-1.635,-1.16],["Ta2Co(ReSe4)2","Se",3,-0.622,-0.644,-0.588],["Ba3RuF6","F",2,-2.987,-3.726,-3.172],["CaCo(GeO3)2","O",3,-2.281,-2.21,-1.951],["MgSn(BiO3)2","O",3,-1.53,-2.061,-1.908],["K2RbBiF6","F",3,-2.823,-2.855,-2.387],["Sr2La2MgMnO8","O",4,-3.167,-3.088,-2.907],["SrCaTiMnO5","O",4,-3.095,-3.039,-2.725],["Rb2MoO4","O",2,-2.2,-1.607,-1.349],["Cs2RbPdF6","F",3,-2.487,-2.344,-2.077],["SmDyRh2O7","O",3,-2.323,-2.453,-2.37],["Na(Nb3Se4)4","Se",2,-1.018,-0.999,-0.959],["SrLaMnO3","O",3,-2.789,-2.979,-2.779],["BaSrGaBiO6","O",4,-2.315,-2.237,-2.217],["Cs3Tl2Br9","Br",2,-1.448,-1.413,-1.412],["NaMn3O4","O",2,-1.983,-1.927,-1.849],["Li6Gd2UN6","N",3,-1.235,-1.07,-0.73],["LaFe5Bi4O15","O",3,-1.869,-1.898,-1.898],["NaIn10CuS16","S",3,-0.855,-0.743,-0.698],["Rb2AgMoF6","F",3,-2.59,-2.501,-2.12],["Ba2NaSr2(SbO4)3","O",4,-2.532,-2.198,-2.03],["Cs5(PtN)3","N",2,-0.297,-0.079,-0.049],["Sr6HfMn2O12","O",3,-3.025,-2.852,-2.64],["HfCrO3","O",2,-3.103,-3.201,-2.992],["KMg6CoO8","O",3,-2.371,-2.603,-2.598],["Tl9BiSe6","Se",2,-0.457,-0.401,-0.401],["V18Ag7O48","O",2,-2.048,-2.015,-1.907],["SrLuCuTe3","Te",3,-1.363,-1.37,-1.151],["HoAl3(PbO4)2","O",3,-2.986,-2.975,-2.753],["Ba3PbF10","F",2,-3.451,-3.446,-3.328],["Pm2MgS4","S",2,-2.129,-2.141,-2.025],["NaMg14SbO16","O",3,-2.785,-2.862,-2.831],["K3ScV2O8","O",3,-2.698,-2.289,-2.015],["Dy3Mg2TiS8","S",3,-1.995,-2.033,-1.925],["Ba8CeUSe12","Se",3,-2.178,-2.16,-2.038],["YbAg3(RhO3)2","O",3,-1.329,-1.493,-1.089],["Ba2TmTcO6","O",3,-2.93,-2.786,-2.649],["TbTmO3","O",2,-3.956,-4.036,-4.036],["Cs2SrTa6Cl18","Cl",3,-1.725,-1.905,-1.727],["KYMg14O16","O",3,-2.888,-3.025,-2.945],["CsNpF6","F",2,-3.465,-3.432,-2.638],["Dy4CdS7","S",2,-2.072,-2.113,-2.033],["MgV2(MoO5)2","O",3,-2.155,-2.348,-2.256],["Rb2Fe4O7","O",2,-1.648,-1.575,-1.436],["Hf6Co16Ni4P13","P",3,-0.852,-0.676,-0.575],["Ba2PaBiO6","O",3,-2.974,-2.838,-2.518],["Tb4PrMn2O12","O",3,-3.245,-3.162,-3.136],["U6Cu2S13","S",2,-1.553,-1.56,-1.487],["MgIn2(FeO3)2","O",3,-1.806,-1.998,-1.911],["CrNiO4","O",2,-1.537,-1.445,-1.431],["Cs3Ho2Cl9","Cl",2,-2.474,-2.492,-1.882],["Mg3(GaN2)2","N",2,-0.633,-0.821,-0.762],["Rb4CeO4","O",2,-2.088,-2.065,-1.534],["ZnCuW2O7","O",3,-1.655,-1.919,-1.506],["RbLi7(NiO3)2","O",3,-1.683,-1.764,-1.67],["NdYO2","O",2,-3.143,-3.259,-3.223],["Na5Ti12O24","O",2,-3.137,-3.08,-2.614],["BaHo2PdO5","O",3,-3.059,-3.033,-2.701],["Ca5(ReO6)2","O",2,-2.885,-2.7,-2.255],["Ca8Ti2Mn6O23","O",3,-2.773,-2.715,-2.525],["Cs4RhO4","O",2,-1.282,-1.193,-1.13],["Cs4TbPaTe6","Te",3,-1.398,-1.111,-1.041],["Ba4USe6","Se",2,-2.056,-2.107,-1.965],["Eu2HfSnO6","O",3,-3.141,-3.254,-3.106],["Sm3Pa(ReN3)4","N",3,-0.924,-0.812,-0.794],["LaPa(NiP)4","P",3,-1.014,-0.945,-0.722],["Nd7ReI12","I",2,-1.42,-1.402,-1.262],["Cu3Mo2O9","O",2,-1.477,-1.504,-1.268],["BaLa2TiCr2O9","O",4,-3.253,-3.155,-3.032],["Mg3(CrN2)2","N",2,-0.623,-0.856,-0.79],["K4Hf6RuI18","I",3,-1.201,-1.21,-0.99],["Tb8OsRu3C8","C",3,-0.469,-0.371,-0.291],["K4Co(MoO4)3","O",3,-2.094,-1.663,-1.426],["GdMoO5","O",2,-2.501,-2.491,-2.392],["Ca10V5Fe15(BiO24)2","O",4,-2.264,-2.23,-2.126],["HgOsO3","O",2,-0.851,-1.168,-0.859],["PrSm7(GeBr6)2","Br",3,-1.877,-1.676,-1.491],["Ca11(PbN5)2","N",2,-0.641,-0.793,-0.777],["Na10ZrSnP6","P",3,-0.62,-0.548,-0.486],["CsTiF4","F",2,-3.481,-3.399,-2.602],["Pu3TaF20","F",2,-3.365,-3.208,-3.208],["LiV6O13","O",2,-2.415,-2.447,-2.333],["Li4Mn2Ni3Sb3O16","O",4,-1.852,-1.733,-1.496],["Na2BeS2","S",2,-1.282,-1.247,-1.099],["YbPr3(ReC2)2","C",3,-0.367,-0.264,-0.205],["SrThNpSe5","Se",3,-2.001,-1.957,-1.85],["Cs2Al6AgF21","F",3,-3.608,-3.554,-2.953],["Eu2Ho3TmSe8","Se",3,-2.246,-2.232,-2.104],["Li3Mn4F15","F",2,-2.837,-2.931,-2.545],["Nb9CrSe16","Se",2,-1.013,-0.996,-0.996],["Rb2TcF6","F",2,-2.846,-2.567,-2.089],["VPbO3","O",2,-2.115,-2.101,-1.969],["Pr3GeAuS7","S",3,-1.646,-1.659,-1.542],["Nb3(BiO3)5","O",2,-2.31,-2.277,-2.012],["Nb2Zn4O9","O",2,-2.328,-2.371,-1.84],["YbMgO3","O",2,-2.504,-3.242,-3.242],["Mg(GaO2)2","O",2,-2.533,-2.489,-2.309],["Mg3SbO4","O",2,-2.126,-2.644,-2.644],["Sm3Sc2Al3O12","O",3,-3.789,-3.725,-3.725],["LiMn4(CoO6)2","O",3,-1.582,-1.661,-1.613],["MgGe7N10","N",2,-0.167,-0.262,-0.251],["Dy8Rh5C12","C",2,-0.385,-0.386,-0.293],["Ho2Th6TiS17","S",3,-2.211,-2.209,-2.144],["Al12PbO19","O",2,-3.304,-3.304,-3.239],["Li4U2N5","N",2,-1.305,-1.116,-0.726],["Li4Nb3V3Cr2O16","O",4,-2.595,-2.55,-2.092],["PrMg(WO3)2","O",3,-2.485,-2.625,-2.47],["KTb3F10","F",2,-4.291,-4.244,-3.65],["Tb2Pr5FeI12","I",3,-1.406,-1.41,-1.254],["Ti3CuO8","O",2,-2.719,-2.809,-2.809],["Ba10GdY4(Cu3O7)5","O",4,-2.162,-2.085,-1.925],["Sn7GeN6","N",2,0.194,-0.032,-0.018],["CePa3O8","O",2,-3.947,-3.999,-3.999],["LiCo5SbO8","O",3,-1.433,-1.477,-1.369],["Gd2GeO5","O",2,-3.295,-3.243,-3.109],["Ta2Fe(ReSe4)2","Se",3,-0.61,-0.644,-0.574],["RbGaGeS4","S",3,-0.916,-0.834,-0.822],["BaDyCuTe3","Te",3,-1.439,-1.4,-1.212],["Mg(ReO4)2","O",2,-2.399,-2.21,-1.932],["SrSmMnFeO6","O",4,-2.725,-2.554,-2.534],["TaTiFeO6","O",3,-2.923,-2.945,-2.685],["YbCe2TmH11","H",3,-0.668,-0.688,-0.681],["ReMoN3","N",2,0.081,-0.246,-0.246],["CaCrF5","F",2,-3.561,-3.546,-3.283],["LaHf2F11","F",2,-4.275,-4.229,-3.983],["Yb(Np5Se8)2","Se",2,-1.919,-1.942,-1.941],["SrNd2Ti4O12","O",3,-3.552,-3.535,-3.281],["Ca2PrNbO6","O",3,-3.296,-3.317,-2.919],["Mn9Zn2O13","O",2,-1.932,-2.003,-1.97],["BaSrGdVO6","O",4,-3.115,-2.948,-2.847],["LaNd7(MoO6)4","O",3,-3.171,-2.963,-2.814],["Ba4HoSbO8","O",3,-2.9,-2.751,-2.595],["Ba2Mn3O7","O",2,-2.108,-2.225,-2.209],["EuDy6CoI12","I",3,-1.465,-1.382,-1.229],["KGd2CuS4","S",3,-1.914,-1.734,-1.461],["K2PtC2","C",2,-0.184,-0.021,-0.014],["ZnNi2(MoO4)3","O",3,-1.914,-1.753,-1.523],["Cs2NaAuCl6","Cl",3,-1.578,-1.61,-1.497],["Mg2CoH5","H",2,-0.354,-0.225,-0.19],["Cs3NaCaBr6","Br",3,-2.095,-2.108,-1.884],["Li10Mn2Fe3Co3O16","O",4,-1.836,-1.832,-1.602],["GaBi3Sb2O11","O",3,-1.885,-1.778,-1.703],["Er2Sb2O7","O",2,-2.83,-2.847,-2.744],["Y8Re3RuC8","C",3,-0.536,-0.235,-0.195],["Sr2PuPaH12","H",3,-0.564,-0.503,-0.503],["MgCuO3","O",2,-1.155,-1.641,-1.641],["LiLuF4","F",2,-4.077,-4.024,-3.034],["ZrCdO3","O",2,-2.482,-2.827,-2.264],["K15Re7N19","N",2,-0.437,-0.14,-0.113],["MgCrBiO5","O",3,-2.089,-2.075,-2.039],["Ag(Mo3S4)2","S",2,-0.711,-0.773,-0.674],["ThMoN3","N",2,-1.285,-1.102,-1.102],["Zn2NiSbO6","O",3,-1.524,-1.572,-1.399],["Ti2V2GaS8","S",3,-1.385,-1.252,-1.237],["Ga2Ni5Te4","Te",2,-0.234,-0.23,-0.191],["CeTh3(MoN3)4","N",3,-1.253,-1.057,-1.057],["KMn2O4","O",2,-1.965,-1.806,-1.754],["Pa4MnCoO12","O",3,-3.412,-3.326,-3.164],["SrGe4O9","O",2,-2.339,-2.288,-2.129],["NaYTiO4","O",3,-3.361,-3.221,-2.696],["Ba2YTlCo2O7","O",4,-2.243,-2.231,-2.079],["Cs3KSnI6","I",3,-1.452,-1.45,-1.397],["NaCd3(RhO2)8","O",3,-1.201,-1.181,-1.079],["Ba3Co8Sn3O20","O",3,-1.74,-1.794,-1.679],["Y5Mn3(NiO6)3","O",3,-2.493,-2.523,-2.49],["Ba3(GeN2)2","N",2,-0.446,-0.459,-0.387],["Er5SbPbO12","O",3,-3.15,-3.196,-3.119],["Na3NbO4","O",2,-2.505,-2.129,-1.545],["K2RbBiBr6","Br",3,-1.597,-1.682,-1.452],["K5Sm(MoO4)4","O",3,-2.352,-1.917,-1.692],["K8SmNp3F20","F",3,-3.564,-3.441,-2.645],["RbVNiF6","F",3,-2.765,-2.842,-2.494],["Mg6MnFeO8","O",3,-2.624,-2.718,-2.718],["KCeSnWO6","O",4,-2.42,-2.463,-2.165],["Yb3(AlN2)2","N",2,-1.215,-1.584,-1.455],["TmAgS2","S",2,-1.537,-1.533,-1.134],["ZnAg2F8","F",2,-1.536,-1.663,-1.616],["Rb2EuDyTe8","Te",3,-1.075,-1.19,-1.127],["La5CePa4O20","O",3,-3.898,-3.731,-3.617],["Mn2Cr3FeO8","O",3,-2.213,-2.153,-2.084],["YbZnO3","O",2,-2.108,-2.743,-2.743],["Ba6Sr11I34","I",2,-1.906,-1.985,-1.985],["Eu3Sc2(FeO4)3","O",3,-2.82,-2.924,-2.924],["Sm2Ti2O5","O",2,-3.241,-3.438,-3.352],["Cs3CrSe4","Se",2,-1.094,-1.045,-1.02],["Dy4Tm(TcO6)2","O",3,-3.228,-3.284,-3.156],["Ca7TiN6","N",2,-1.147,-1.083,-1.026],["Rb2InHgF6","F",3,-2.552,-2.564,-2.188],["PuCrO3","O",2,-2.803,-2.885,-2.836],["InPb2I5","I",2,-0.798,-0.855,-0.821],["Ba2Dy3BiS8","S",3,-2.092,-2.017,-1.925],["MnCo4Cu10(SnS4)5","S",4,-0.581,-0.421,-0.406],["Li2Cr3O10","O",2,-1.704,-1.69,-1.679],["Er2Mo2C3","C",2,-0.376,-0.253,-0.241],["Na3Mn5O12","O",2,-1.807,-1.713,-1.658],["Er5Ru2C7","C",2,-0.493,-0.29,-0.241],["Na2Pd3PtSe6","Se",3,-0.65,-0.629,-0.597],["KNd(Pd3O4)2","O",3,-1.249,-1.299,-1.147],["Rb5Re3S7","S",2,-1.102,-0.902,-0.894],["La4ScMo3O14","O",3,-3.112,-3.106,-2.966],["Rb2VCuSe4","Se",3,-1.074,-0.926,-0.83],["BaYCu3Se4","Se",3,-0.957,-1.205,-0.881],["YTm3Hf4F28","F",3,-4.281,-4.155,-3.869],["Ba2GeWN4","N",3,-0.883,-0.503,-0.441],["KLiSnO2","O",3,-1.808,-1.641,-1.485],["CaGa4O7","O",2,-2.506,-2.442,-2.316],["InBi37Br48","Br",2,-0.824,-0.876,-0.876],["Li6Mn5Ni3O16","O",3,-1.864,-1.773,-1.635],["Li(WN)3","N",2,-0.631,-0.446,-0.394],["K2RbMoCl6","Cl",3,-1.827,-1.878,-1.651],["DyNb8VSe16","Se",3,-1.161,-1.118,-1.116],["EuPtO3","O",2,-1.743,-2.151,-2.151],["LiHfS2","S",2,-1.72,-1.664,-1.438],["Ba2NaRe2H17","H",3,-0.366,-0.189,-0.189],["Cs2KSmCl6","Cl",3,-2.501,-2.416,-1.884],["LiCr3O9","O",2,-1.697,-1.696,-1.691],["Cr3SnS8","S",2,-0.71,-0.751,-0.751],["Cs6TbDyI12","I",3,-1.765,-1.7,-1.443],["DyBi3(Ru2O7)2","O",3,-1.81,-1.81,-1.739],["Tl2SbF5","F",2,-2.389,-2.323,-2.098],["U2MnNiSe6","Se",3,-1.076,-1.184,-1.026],["LiNd2O6","O",2,-2.218,-2.485,-2.482],["LuMnSbO6","O",3,-2.495,-2.433,-2.366],["Dy2CoPtO6","O",3,-2.575,-2.549,-2.536],["Ca3Sc2(GeO4)3","O",3,-3.105,-2.954,-2.712],["MgZn2(FeS2)4","S",3,-0.681,-0.728,-0.706],["Na7Ti11O24","O",2,-3.099,-2.96,-2.389],["NaLaMg14O16","O",3,-2.922,-3.028,-2.942],["NaBiO3","O",2,-1.58,-1.395,-1.353],["Zn4CdSe5","Se",2,-0.919,-0.929,-0.929],["Li5V12O32","O",2,-2.36,-2.269,-2.126],["KBa(NdI4)2","I",3,-1.748,-1.739,-1.568],["Al2Sb2O7","O",2,-1.894,-2.561,-2.457],["LaNd3(MoO6)2","O",3,-3.178,-2.969,-2.82],["Ba4TbReO8","O",3,-2.832,-2.814,-2.581],["La3YHf4O14","O",3,-3.616,-3.963,-3.689],["Mn3V2O8","O",2,-2.281,-2.268,-2.195],["Ba2Nb5O9","O",2,-2.868,-2.642,-2.526],["NaTbMnWO6","O",4,-2.688,-2.492,-2.23],["Ba2HoUO6","O",3,-3.653,-3.425,-3.056],["CaCd(AgO2)4","O",3,-0.808,-0.933,-0.932],["Nd2HgC2","C",2,-0.432,-0.241,-0.16],["LiNd2OsO6","O",3,-2.819,-2.693,-2.527],["Na2Hf2O5","O",2,-3.165,-3.155,-2.259],["SmTiVO5","O",3,-3.336,-3.314,-3.178],["KAg2SbS4","S",3,-0.472,-0.429,-0.379],["NdZrO3","O",2,-3.563,-3.616,-3.616],["NaCa2ReO6","O",3,-2.489,-2.448,-2.016],["BaLaMgRuO6","O",4,-2.75,-2.615,-2.506],["TbUTe6","Te",2,-0.956,-0.955,-0.955],["Li3V3O8","O",2,-2.424,-2.316,-1.92],["RbV4O10","O",2,-2.359,-2.242,-2.212],["MgCr2(CuO4)2","O",3,-1.673,-1.74,-1.712],["Dy(TmTe2)2","Te",2,-1.621,-1.618,-1.618],["BaPr3Os6O19","O",3,-1.951,-2.084,-1.976],["SrSm3(Pt2O7)2","O",3,-2.039,-2.112,-2.059],["PaTaN2","N",2,-1.608,-1.593,-1.593],["Rb2YF5","F",2,-3.729,-3.644,-2.788],["Y3Np(WN2)4","N",3,-1.205,-1.209,-1.186],["GdHgO","O",2,-2.276,-2.164,-1.294],["CaTmMnFeO6","O",4,-2.779,-2.657,-2.614],["LiLu6Co17P12","P",3,-0.925,-0.828,-0.622],["TiCu2P","P",2,-0.565,-0.644,-0.341],["SrCa3TiMn3O10","O",4,-2.825,-2.826,-2.609],["Zn(WO2)4","O",2,-1.695,-1.945,-1.802],["Ti3Sn7O20","O",2,-2.489,-2.528,-2.528],["Ti2AlC","C",2,-0.699,-0.545,-0.409],["Ho2Pa2O5","O",2,-2.648,-3.578,-3.541],["La2CuNiH8","H",3,-0.509,-0.459,-0.375],["Lu5OsRuC7","C",3,-0.532,-0.315,-0.269],["LiAl(SbO3)4","O",3,-1.929,-2.007,-1.89],["LiMn2O3","O",2,-2.074,-2.05,-1.905],["Yb3MnOsC6","C",3,-0.333,-0.308,-0.264],["Ba4ScAuO8","O",3,-2.448,-2.458,-2.38],["KSr2I5","I",2,-1.878,-1.888,-1.647],["ThNb4O12","O",2,-3.242,-3.27,-3.198],["SrCoTcP2","P",3,-0.882,-0.734,-0.709],["Li2FeAgF6","F",3,-2.234,-2.571,-2.192],["LaMn2O5","O",2,-2.631,-2.524,-2.506],["TbNb8CoSe16","Se",3,-1.065,-1.07,-1.057],["BaVF7","F",2,-3.34,-3.249,-2.962],["Cd3Ga5O12","O",2,-1.738,-1.822,-1.822],["KNdFeH6","H",3,-0.403,-0.36,-0.31],["Nd3ReO7","O",2,-3.239,-3.225,-3.035],["Na4TaMnO6","O",3,-2.367,-2.109,-1.595],["Tc3Bi4PtF28","F",3,-2.387,-2.462,-2.317],["ErHfMn12P7","P",3,-0.743,-0.755,-0.698],["Sc3AlC4","C",2,-0.556,-0.499,-0.489],["NdTh9O20","O",2,-4.239,-4.247,-4.247],["Dy(PaH4)3","H",2,-0.501,-0.498,-0.498],["ScFeCuH6","H",3,-0.26,-0.246,-0.246],["TbLu2IrO7","O",3,-3.032,-3.13,-3.08],["Ho5RuWC7","C",3,-0.506,-0.28,-0.249],["Nd3AlC","C",2,-0.282,-0.12,-0.118],["Rb2Ni(PtS2)2","S",3,-0.86,-0.779,-0.773],["Co3Ni3Se8","Se",2,-0.377,-0.355,-0.355],["Mg2Cr3MoS8","S",3,-1.104,-1.178,-1.109],["NdHo3(Rh2O7)2","O",3,-2.324,-2.468,-2.385],["PrPbF7","F",2,-3.088,-3.179,-3.111],["Mg3NiO4","O",2,-2.594,-2.583,-2.583],["CaCr2Cu3(SbO6)2","O",4,-1.882,-1.817,-1.68],["Dy5AgS8","S",2,-2.103,-2.137,-1.987],["CsPa3Se4","Se",2,-1.465,-1.383,-1.277],["Tb5TcWC7","C",3,-0.492,-0.401,-0.353],["Lu3Bi5O14","O",2,-2.176,-2.395,-2.387],["MgZr2(BiO4)2","O",3,-2.75,-2.859,-2.526],["MgCo4(AgO2)4","O",3,-0.992,-1.187,-1.036],["Bi12PbO19","O",2,-1.602,-1.631,-1.608],["BaYMgCrCuO5","O",5,-2.338,-2.746,-2.408],["Mn(Fe5N4)2","N",2,0.176,-0.077,-0.077],["Sr20Ta8O39","O",2,-3.33,-3.165,-2.67],["K3MnH5","H",2,-0.168,-0.195,-0.195],["Cs2Pd3S4","S",2,-0.884,-0.704,-0.703],["BaMoP2","P",2,-0.589,-0.916,-0.916],["SrCaV2O6","O",3,-2.919,-2.79,-2.567],["Ho2Mo4O15","O",2,-2.523,-2.425,-2.294],["Na2FeCuF7","F",3,-2.56,-2.521,-2.115],["Ba2SmCoO5","O",3,-2.672,-2.678,-2.511],["In(CuN)3","N",2,0.568,-0.034,-0.025],["Ta8Hg(PbO5)5","O",3,-2.63,-2.78,-2.227],["KBi(WO4)2","O",3,-2.153,-1.957,-1.648],["AcTh(NiP)2","P",3,-1.216,-0.825,-0.577],["KPrSmSbO6","O",4,-2.752,-2.706,-2.614],["Li8NbS6","S",2,-1.402,-1.472,-1.332],["Cr2CuAgS4","S",3,-0.674,-0.702,-0.526],["CsRb2TbCl6","Cl",3,-2.422,-2.445,-1.9],["Li4GdY3O8","O",3,-3.185,-3.235,-2.466],["YMoN2","N",2,-1.342,-1.273,-1.273],["Sm5(CoO6)2","O",2,-2.858,-2.879,-2.878],["RbNiBr3","Br",2,-1.266,-1.262,-1.15],["RbErZnSe3","Se",3,-1.632,-1.525,-1.347],["La7NdTe12","Te",2,-1.871,-1.842,-1.842],["NaNp4(PaH8)3","H",3,-0.469,-0.464,-0.464],["RbVF4","F",2,-3.225,-3.104,-2.582],["V3CrGaTe8","Te",3,-0.507,-0.555,-0.527],["Dy2(CuP)3","P",2,-0.995,-0.957,-0.61],["Sr3LiTcO6","O",3,-2.592,-2.547,-2.312],["LaGdTa6O18","O",3,-3.309,-3.45,-3.18],["SrDy6IrI12","I",3,-1.569,-1.395,-1.256],["Sr3Eu(Th2Te5)4","Te",3,-1.588,-1.527,-1.463],["Sr9(CrN4)2","N",2,-0.872,-0.687,-0.663],["NaCo(PdO3)2","O",3,-0.978,-0.991,-0.961],["K2Cu3(MoO4)4","O",3,-1.771,-1.608,-1.386],["MgNb4(CoO6)2","O",3,-2.551,-2.689,-2.239],["Li3(CuO2)2","O",2,-1.585,-1.477,-1.41],["ErFe5P3","P",2,-0.748,-0.719,-0.586],["Tb5MnCoO12","O",3,-3.122,-3.077,-3.063],["Mg5Co19P12","P",2,-0.554,-0.443,-0.434],["MgV2CoO6","O",3,-2.328,-2.376,-2.194],["Ba2Rh7O18","O",2,-1.225,-1.426,-1.426],["Sr3HoCrO6","O",3,-3.136,-3.131,-2.865],["Tl2Mo4O13","O",2,-1.847,-1.765,-1.668],["NaFe5O8","O",2,-1.649,-1.677,-1.557],["BaCd(Pd3O4)2","O",3,-0.991,-1.11,-1.11],["Cs3Li2Al(MoO4)4","O",4,-2.311,-1.956,-1.687],["SbPbF7","F",2,-2.699,-2.609,-2.492],["Nb2Ge2O7","O",2,-2.429,-2.525,-2.423],["Yb2NpN3","N",2,-1.819,-1.534,-1.432],["TlSbCl6","Cl",2,-1.252,-1.232,-1.227],["BaCr4S7","S",2,-1.242,-1.233,-1.195],["YBiIr2O7","O",3,-1.72,-1.959,-1.893],["Ba2Mg(CuO2)2","O",3,-1.833,-2.131,-1.87],["SmCr2O2","O",2,-1.021,-2.325,-1.91],["RbGaBr4","Br",2,-1.578,-1.501,-1.243],["Li4Ti2Cu3Sb3O16","O",4,-2.104,-2.03,-1.643],["LaFe2PbO6","O",3,-2.118,-2.173,-2.173],["MgCuO2","O",2,-1.948,-1.991,-1.991],["K4Zr6GaI18","I",3,-1.26,-1.279,-1.108],["Rb3BiF6","F",2,-2.868,-2.834,-2.392],["CsNd2(FeH6)2","H",3,-0.369,-0.342,-0.311],["Zr2Pb2O5","O",2,-2.589,-2.869,-2.331],["Mg5ZnN4","N",2,-0.669,-0.792,-0.792],["Rb8Zr6CrI20","I",3,-1.335,-1.364,-1.239],["ZrGeSe","Se",2,-1.19,-1.038,-0.682],["Li4Cr2Cu3Sb3O16","O",4,-1.814,-1.731,-1.487],["Li3ErCl6","Cl",2,-2.35,-2.352,-1.818],["BaMgMn4O8","O",3,-2.189,-2.271,-2.22],["K3ScF6","F",2,-3.526,-3.473,-2.689],["Nd6Mo10O39","O",2,-2.564,-2.431,-2.292],["Ba4TmSbO8","O",3,-2.918,-2.763,-2.605],["Nd4GaS3","S",2,-1.937,-1.723,-1.493],["AlSb3F15","F",2,-2.743,-2.913,-2.815],["ZrPbO3","O",2,-2.85,-2.876,-2.427],["Pu4NbMo3N8","N",3,-1.336,-1.198,-1.198],["CaU8S17","S",2,-1.819,-1.834,-1.808],["HfTa8CrO25","O",3,-3.009,-3.2,-3.2],["USbSe","Se",2,-0.961,-0.833,-0.495],["Sm2Ti2O7","O",2,-3.725,-3.669,-3.464],["MgCo2(AgO2)2","O",3,-1.085,-1.406,-1.152],["Li4Ti3Cr3(SnO8)2","O",4,-2.663,-2.6,-2.142],["TiNb8CoSe16","Se",3,-0.998,-1.013,-0.993],["HoZr3(CuS4)2","S",3,-1.607,-1.639,-1.403],["SrLaTiFeO6","O",4,-3.158,-3.063,-2.86],["NaCaSnSbO6","O",4,-2.206,-2.119,-1.845],["Na4UBiSe6","Se",3,-1.28,-1.133,-0.935],["ZnPt3O4","O",2,-0.765,-0.99,-0.99],["MgVZn2WO6","O",4,-2.003,-2.203,-2.003],["Hf8MgSe16","Se",2,-1.541,-1.536,-1.485],["RbMoF5","F",2,-2.834,-2.74,-2.299],["La2TiCoO6","O",3,-3.324,-3.245,-3.083],["Ba2TmAg5S6","S",3,-1.199,-1.156,-0.798],["Ca2CoSbO6","O",3,-2.351,-2.253,-2.08],["Li6Yb(PaN3)2","N",3,-1.309,-1.114,-0.759],["CeTh2S3","S",2,-2.125,-2.099,-2.099],["Cs2Zr(CuTe2)2","Te",3,-0.912,-0.824,-0.653],["Li4Mn2Co3Sb3O16","O",4,-1.831,-1.769,-1.565],["Ba2YW3O7","O",3,-2.046,-2.454,-2.307],["CsPaSe3","Se",2,-1.616,-1.442,-1.344],["Cs2TlHgBr6","Br",3,-1.379,-1.372,-1.351],["KReF8","F",2,-2.362,-2.5,-1.81],["KRb2TlCl6","Cl",3,-1.81,-1.797,-1.665],["YbHo2Se3","Se",2,-1.912,-1.925,-1.925],["Dy5BeSe4","Se",2,-1.655,-1.599,-1.458],["Ba6Er2Ga4O15","O",3,-2.994,-2.832,-2.615],["YbEu3(AlH5)4","H",3,-0.341,-0.348,-0.343],["Ba2SmUSe6","Se",3,-2.016,-1.965,-1.861],["CaTi2PbO6","O",3,-3.133,-3.06,-2.664],["KVIrSe4","Se",3,-0.89,-0.816,-0.793],["Dy5ZrSbO12","O",3,-3.566,-3.559,-3.409],["K2FeMoS4","S",3,-1.044,-0.924,-0.824],["CsRb2GaCl6","Cl",3,-1.935,-1.976,-1.671],["La3DyPtSe7","Se",3,-2.002,-1.982,-1.914],["UCd(MoO4)4","O",3,-2.22,-2.179,-2.057],["Li8BiO6","O",2,-1.971,-1.944,-1.808],["TiZnF4","F",2,-2.761,-3.104,-2.936],["Rb2NaAlCl6","Cl",3,-2.144,-2.104,-1.735],["YTiMn4P3","P",3,-0.974,-0.918,-0.808],["LiNi9O13","O",2,-0.97,-1.107,-1.1],["YMgCrS4","S",3,-1.611,-1.687,-1.592],["CaPr2Mn3O9","O",3,-2.506,-2.72,-2.691],["Sr3Ca5Fe4(CoO6)4","O",4,-2.07,-2.07,-2.052],["Ga2SnGeS6","S",3,-0.786,-0.692,-0.667],["Y3Sn4BiO14","O",3,-2.737,-2.684,-2.555],["SrCaYSbO6","O",4,-2.979,-2.877,-2.726],["Ce(LuS2)3","S",2,-2.381,-2.368,-2.368],["LiMn12O24","O",2,-1.82,-1.845,-1.821],["Sr2GaW2O7","O",3,-2.297,-2.402,-2.221],["Na3Li4Th6F31","F",3,-4.048,-4.041,-2.802],["Zr2TiMoP2","P",3,-1.214,-1.039,-0.941],["Sr5Ca(RuO6)2","O",3,-2.369,-2.383,-2.254],["K2YSbO7","O",3,-1.847,-1.96,-1.873],["Er5Al3C4","C",2,-0.579,-0.269,-0.269],["CaLaMnSnO6","O",4,-2.801,-2.766,-2.613],["Ba5SrP6","P",2,-1.159,-1.148,-1.148],["YCo3P2","P",2,-0.913,-0.822,-0.614],["Cs6SmTmBr12","Br",3,-2.146,-2.136,-1.79],["Er9Ge4S21","S",2,-1.747,-1.785,-1.755],["Cr4Fe2O19","O",2,-1.004,-1.338,-1.338],["NbVF6","F",2,-3.163,-3.163,-3.163],["InTcF7","F",2,-2.557,-2.548,-2.387],["K2Zn(SnSe3)2","Se",3,-0.981,-0.826,-0.802],["Ca4CdO5","O",2,-2.84,-2.914,-2.914],["Na2Mg2NiH6","H",3,-0.316,-0.261,-0.201],["Ba3Er2IrO9","O",3,-2.805,-2.779,-2.744],["DyEr3Ni2C5","C",3,-0.513,-0.314,-0.245],["Nd2SnS5","S",2,-1.742,-1.663,-1.654],["DyEr2RuO7","O",3,-3.118,-3.187,-3.102],["BaPa2S5","S",2,-2.082,-1.649,-1.645],["Li3Co2O5","O",2,-1.737,-1.595,-1.499],["PrBi7(Os2O11)2","O",3,-1.428,-1.7,-1.602],["BaHgO2","O",2,-1.945,-1.713,-1.713],["YbMn(WN2)2","N",3,-0.584,-0.725,-0.647],["Cs2RbTmCl6","Cl",3,-2.505,-2.433,-1.892],["AlZn2Co3O8","O",3,-1.857,-1.808,-1.718],["TaInO3","O",2,-2.507,-2.675,-2.403],["CaBi2F12","F",2,-2.386,-2.546,-2.436],["Pr6GdErO12","O",3,-3.676,-3.791,-3.791],["Cs5FeO4","O",2,-1.45,-1.312,-1.196],["V(FeO2)2","O",2,-1.842,-1.938,-1.9],["MgV3SnO8","O",3,-2.384,-2.511,-2.379],["Tl3BiI6","I",2,-0.817,-0.826,-0.73],["Ce3AlCrS7","S",3,-1.868,-1.908,-1.87],["CaRu4Pb3O14","O",3,-1.413,-1.592,-1.501],["K2TcO4","O",2,-1.885,-1.569,-1.313],["Ho2BiO2","O",2,-2.975,-2.685,-2.155],["VGa(CuO2)2","O",3,-1.763,-1.776,-1.472],["Sm2Dy4NiCl10","Cl",3,-2.098,-2.125,-1.941],["Yb(HfSe2)4","Se",2,-1.603,-1.619,-1.603],["Ta2Pd3Se8","Se",2,-0.711,-0.626,-0.555],["Li2CrCuO4","O",3,-1.9,-1.779,-1.554],["La2Mg(NiH4)2","H",3,-0.543,-0.487,-0.331],["EuReO3","O",2,-2.353,-2.576,-2.576],["MgNb4(SnO6)2","O",3,-2.624,-2.735,-2.476],["TbTmPd2F14","F",3,-2.777,-2.739,-2.676],["MgPaBr6","Br",2,-1.734,-1.856,-1.566],["NdDy2RuO7","O",3,-3.066,-3.112,-3.029],["Y3Tm2Ru2C7","C",3,-0.469,-0.338,-0.278],["Rb4ZrTcI12","I",3,-1.18,-1.195,-1.086],["Hf3NpN4","N",2,-1.836,-1.894,-1.894],["Tb(CuS)2","S",2,-0.994,-1.259,-0.768],["KEuFeBiO6","O",4,-1.833,-1.987,-1.977],["Mn4FeS5","S",2,-0.906,-0.987,-0.987],["MgV6O15","O",2,-2.381,-2.421,-2.375],["Zn2MoN3","N",2,-0.311,-0.209,-0.206],["YThMn12P7","P",3,-0.726,-0.785,-0.703],["Cs2Hg3(GeS4)2","S",3,-0.796,-0.661,-0.608],["Ba4LiW2N7","N",3,-1.036,-0.55,-0.505],["AcNiO3","O",2,-2.455,-2.358,-2.357],["TlSbTe2","Te",2,-0.44,-0.403,-0.396],["Sr3Sc2N4","N",2,-1.203,-1.309,-1.184],["Ta4NiS8","S",2,-1.253,-1.289,-1.209],["Cs2V3O8","O",2,-2.453,-2.123,-1.95],["SrMg14ZnO16","O",3,-2.87,-2.963,-2.963],["Rb2NaYF6","F",3,-3.569,-3.501,-2.693],["Ba2LuRuO6","O",3,-2.875,-2.628,-2.562],["RbCaPbF7","F",3,-2.961,-2.94,-2.803],["K2IrF6","F",2,-2.47,-2.25,-1.888],["TiNbS4","S",2,-1.459,-1.411,-1.411],["Sr4Ca4Co7CuO20","O",4,-2.103,-2.107,-2.061],["Sr3V4CdO14","O",3,-2.705,-2.418,-2.272],["Mn6Zn3O16","O",2,-1.683,-1.742,-1.696],["BaNdMgCo2O5","O",4,-2.136,-2.493,-2.305],["LiTaF6","F",2,-3.587,-3.468,-2.397],["Ti3WC4","C",2,-0.737,-0.762,-0.762],["Ce(ErSe2)3","Se",2,-2.171,-2.156,-2.156],["YAl3O6","O",2,-3.509,-3.558,-3.558],["Dy(HoTe2)2","Te",2,-1.649,-1.648,-1.648],["Nd5TaMnO12","O",3,-3.42,-3.392,-3.188],["CaPrZrFeO6","O",4,-3.028,-3.164,-2.883],["NaCaZrSbO6","O",4,-2.779,-2.631,-2.228],["MgCr2CuO7","O",3,-1.82,-1.873,-1.842],["Cs2Al3AgF12","F",3,-3.436,-3.345,-2.608],["Ca6OsRuN6","N",3,-0.883,-0.72,-0.694],["NaInSnWO6","O",4,-1.914,-1.965,-1.709],["YHo(CoC2)2","C",3,-0.4,-0.189,-0.153],["AgHgO2","O",2,-0.508,-0.539,-0.539],["NaEu(GeO3)4","O",3,-1.743,-2.068,-2.068],["Tl3V5O14","O",2,-2.129,-2.061,-1.955],["PrMnAlO5","O",3,-3.039,-2.92,-2.884],["Nd7SmSe12","Se",2,-2.21,-2.192,-2.192],["SrNb2O4","O",2,-2.988,-2.774,-2.6],["Cr2InAgO8","O",3,-1.613,-1.532,-1.517],["SrIr4Pb3O14","O",3,-1.27,-1.463,-1.402],["HoReF7","F",2,-3.24,-3.265,-3.105],["InSnBr3","Br",2,-1.058,-1.078,-1.062],["CsPuO3","O",2,-2.808,-2.586,-2.201],["LiTi8O13","O",2,-3.225,-3.247,-3.056],["Cs3Cu(AgP)2","P",3,-0.387,-0.244,-0.137],["Pr6DyIrI12","I",3,-1.536,-1.411,-1.268],["Sm2WO6","O",2,-3.267,-3.119,-2.835],["LiSm4Ti2Mn2O12","O",4,-3.226,-3.279,-2.958],["YbSm6CoBr12","Br",3,-1.812,-1.837,-1.667],["HfSc3(Co5P3)4","P",3,-0.779,-0.628,-0.53],["MgAlH5","H",2,-0.189,-0.163,-0.156],["Nb4AgS8","S",2,-1.239,-1.245,-1.145],["NdAg3(Ir2O7)2","O",3,-1.018,-1.249,-1.16],["PaPbF7","F",2,-3.557,-3.532,-3.148],["Pr7Sm(WO6)4","O",3,-3.219,-3.055,-2.77],["Rb2Ta6PbBr18","Br",3,-1.209,-1.381,-1.248],["LiOsO3","O",2,-1.745,-1.605,-1.272],["Li2Cu(WO4)2","O",3,-2.065,-1.969,-1.442],["SrAc(IrN)2","N",3,-0.852,-0.664,-0.388],["SrYb2ReH7","H",3,-0.438,-0.619,-0.536],["BaTiMnNbO6","O",4,-2.868,-2.887,-2.594],["K3Er(BiSe3)2","Se",3,-1.294,-1.127,-1.025],["NaWO3","O",2,-2.107,-1.924,-1.462],["Ba3Ta6Fe2O21","O",3,-3.169,-2.986,-2.541],["PuMgO4","O",2,-2.855,-2.848,-2.759],["BaSrLuBiO6","O",4,-2.859,-2.701,-2.681],["Sm6DyRuI12","I",3,-1.458,-1.344,-1.173],["Sr21Co14O43","O",2,-2.297,-2.243,-2.209],["K2SnTe3","Te",2,-0.892,-0.764,-0.764],["Sr5Al2F16","F",2,-4.116,-4.104,-3.792],["MgZnPdO4","O",3,-1.605,-1.692,-1.634],["Ba3NdV3O12","O",3,-2.989,-2.644,-2.561],["Cs2HgSbI6","I",3,-1.042,-1.038,-0.999],["Sr4Cr(TcO4)3","O",3,-2.497,-2.414,-2.208],["TlBiF4","F",2,-2.523,-2.505,-2.259],["CsLiCl2","Cl",2,-2.2,-2.198,-2.198],["CsLaHgSe3","Se",3,-1.53,-1.434,-1.212],["SrPrCuS3","S",3,-1.886,-1.847,-1.662],["NaCeMnWO6","O",4,-2.471,-2.547,-2.177],["KPrZr4O12","O",3,-3.033,-3.227,-3.227],["Ba3CeRu2O9","O",3,-2.657,-2.485,-2.268],["Mg14Ge5O24","O",2,-2.787,-2.731,-2.454],["Na2LiRhF6","F",3,-2.551,-2.538,-2.171],["KTiS2","S",2,-1.53,-1.462,-1.36],["Mn2SnTe4","Te",2,-0.391,-0.432,-0.429],["KRbTcH9","H",3,-0.286,-0.093,-0.093],["TlZnCu3Se4","Se",3,-0.248,-0.4,-0.36],["Sr(CrN)2","N",2,-0.526,-0.651,-0.623],["YbLu(CoH4)2","H",3,-0.485,-0.461,-0.414],["Tb2MgTiO6","O",3,-3.695,-3.651,-3.425],["Ba2TbMgBiO6","O",4,-2.657,-2.846,-2.621],["CsCe2F8","F",2,-4.038,-3.956,-3.372],["ZnCr4(CuO4)3","O",3,-1.631,-1.693,-1.682],["Mn4Al(CuO4)3","O",3,-1.534,-1.783,-1.755],["NaNb2Bi2O9","O",3,-2.364,-2.289,-1.935],["EuMn4(CuO4)3","O",3,-1.761,-1.785,-1.757],["HfNiP","P",2,-1.11,-0.954,-0.784],["Y2Bi2O7","O",2,-2.53,-2.593,-2.582],["Tb2Nd3Mn2O12","O",3,-3.19,-3.118,-3.092],["Nd2Th5Te12","Te",2,-1.532,-1.505,-1.496],["Ba2YWO6","O",3,-3.114,-2.853,-2.657],["RbBe3VF9","F",3,-3.356,-3.344,-3.094],["Ni2GeP","P",2,-0.366,-0.357,-0.284],["BaEuMn2O5","O",3,-2.658,-2.601,-2.493],["Sr10TcSnN10","N",3,-0.791,-0.612,-0.574],["LiGaTe2","Te",2,-0.84,-0.714,-0.714],["Li3Mn4NiO8","O",3,-2.004,-1.944,-1.787],["Tb3Y(Ni7P4)2","P",3,-0.928,-0.833,-0.622],["Fe3Mo5N8","N",2,-0.419,-0.363,-0.357],["Li4Nb2Fe3Sb3O16","O",4,-2.135,-2.127,-1.728],["LiMgP","P",2,-0.751,-0.72,-0.642],["Ba(GdS2)2","S",2,-2.402,-2.335,-2.212],["BaTmF5","F",2,-4.376,-4.128,-3.756],["Mg4Mn9O13","O",2,-2.266,-2.342,-2.342],["Pr3NdCo6O19","O",3,-2.016,-1.957,-1.956],["SrGeO3","O",2,-2.743,-2.524,-2.247],["Cs2AgF6","F",2,-2.107,-1.857,-1.777],["Dy8MoW3C8","C",3,-0.465,-0.384,-0.348],["La(CoO2)3","O",2,-1.964,-1.927,-1.927],["MgV4(WO6)2","O",3,-2.328,-2.441,-2.324],["Pr2CoRuO6","O",3,-2.457,-2.556,-2.512],["Sr(FeS2)2","S",2,-0.835,-1.014,-0.978],["Mn(RhO2)2","O",2,-1.377,-1.38,-1.38],["Ag2HgGeS4","S",3,-0.464,-0.387,-0.264],["BaGdInWO6","O",4,-2.697,-2.651,-2.539],["Sr2ScNbO6","O",3,-3.5,-3.284,-2.932],["Zr3AlN4","N",2,-1.711,-1.902,-1.902],["CuBiPdSe3","Se",3,-0.372,-0.351,-0.313],["SrMg3GeN4","N",3,-0.809,-0.731,-0.687],["Cs2LiMoF6","F",3,-2.955,-2.872,-2.332],["YbCeSe3","Se",2,-2.189,-2.135,-2.135],["Mn2Nb2Zn2O9","O",3,-2.439,-2.436,-2.033],["Ba2Ca2TbTi3(CuO7)2","O",5,-3.014,-2.922,-2.577],["Dy5Bi3O14","O",2,-2.747,-2.873,-2.864],["Rb2In4O7","O",2,-1.894,-1.795,-1.584],["Th8MnTe17","Te",2,-1.393,-1.307,-1.29],["K3NdBr6","Br",2,-2.067,-2.135,-1.679],["KGd(WO4)2","O",3,-2.661,-2.426,-2.095],["Ho3SbO7","O",2,-3.435,-3.302,-3.196],["Rb3BiTe3","Te",2,-0.959,-0.899,-0.864],["Ba6Sc3CrSe12","Se",3,-2.064,-2.025,-1.915],["CaMnV4(CuO6)2","O",4,-2.225,-2.241,-2.063],["NaPdN","N",2,0.269,-0.074,-0.037],["KHo(NbCl3)6","Cl",3,-1.677,-1.874,-1.725],["Nd3InS6","S",2,-1.984,-1.968,-1.968],["Mg8SnPd3O16","O",3,-2.112,-2.196,-2.08],["MoPb5O8","O",2,-1.664,-1.6,-1.507],["Zn(Mo4O5)2","O",2,-1.224,-1.685,-1.666],["SmPa3(TaN2)4","N",3,-1.607,-1.586,-1.586],["Yb6Al3GaN8","N",3,-1.103,-1.472,-1.366],["ZnFe(Mo3S4)4","S",3,-0.877,-0.789,-0.755],["Sr6TaCo4O15","O",3,-2.479,-2.377,-2.187],["K2NaPdF6","F",3,-2.494,-2.391,-2.123],["La4(ErS2)11","S",2,-2.396,-2.402,-2.401],["Ca8Fe3N8","N",2,-0.908,-0.713,-0.692],["KGdO3","O",2,-2.317,-2.504,-2.504],["LiDyFeH6","H",3,-0.549,-0.43,-0.376],["AlCr4AgSe8","Se",3,-0.818,-0.788,-0.718],["Li16Mn15(CuO12)3","O",3,-1.979,-1.897,-1.736],["Y2Ti2O7","O",2,-3.745,-3.711,-3.505],["LaMgFeSbO6","O",4,-2.556,-2.555,-2.441],["LaPr2Pa7O20","O",3,-3.962,-3.91,-3.76],["CsGdO2","O",2,-2.911,-2.877,-2.235],["Tb9DySe10","Se",2,-2.027,-1.997,-1.997],["Rb8Ta6O23","O",2,-2.43,-2.433,-1.844],["YAgSe2","Se",2,-1.436,-1.457,-1.125],["Ba2HoMg(CuO2)4","O",4,-1.984,-2.121,-1.969],["Dy6MoO12","O",2,-3.614,-3.567,-3.447],["Cs2LiMoBr6","Br",3,-1.568,-1.579,-1.494],["CsTiS2","S",2,-1.433,-1.441,-1.364],["Ho2Tm2Ni2C5","C",3,-0.523,-0.359,-0.279],["ZrTlCuSe3","Se",3,-1.092,-0.933,-0.705],["Nd6DyCoBr12","Br",3,-1.834,-1.848,-1.686],["Zr4Ti3MnP4","P",3,-1.239,-1.083,-1.044],["AgPdO3","O",2,-0.174,-0.614,-0.564],["SrAlO3","O",2,-3.032,-2.99,-2.99],["CaMnO3","O",2,-2.5,-2.416,-2.33],["K2TiAuF6","F",3,-2.807,-3.012,-2.221],["Th3NpH15","H",2,-0.588,-0.543,-0.543],["Gd3MnGaS7","S",3,-1.833,-1.815,-1.743],["Zr4Nb3(MoN4)3","N",3,-1.365,-1.289,-1.264],["U2MoO8","O",2,-3.116,-3.201,-3.131],["Eu2TiRuO6","O",3,-2.843,-2.994,-2.876],["AlHgBr4","Br",2,-1.041,-1.242,-1.089],["SrGaF5","F",2,-3.494,-3.485,-3.216],["CrCuO2","O",2,-1.785,-1.721,-1.457],["Cs2Pt3Se4","Se",2,-0.914,-0.706,-0.692],["Ba2Ni7F18","F",2,-2.731,-2.722,-2.722],["MgTa2(CuO4)2","O",3,-2.458,-2.56,-1.948],["Li5V2Fe3O10","O",3,-2.146,-2.047,-1.692],["CuBiO4","O",2,-0.901,-1.085,-1.085],["CsTaMoO6","O",3,-2.605,-2.354,-2.08],["Sr4CrTcO8","O",3,-2.718,-2.642,-2.446],["BaSrNdFeO6","O",4,-2.588,-2.632,-2.612],["Cs4(CuO2)3","O",2,-1.186,-1.084,-1.068],["RbCaI3","I",2,-1.815,-1.815,-1.576],["SrMoO2","O",2,-1.996,-2.327,-2.327],["Mg2Be(Ni2P)6","P",3,-0.549,-0.465,-0.446],["Na9Cu2O7","O",2,-1.348,-1.304,-1.267],["Ba3BiIr2O9","O",3,-2.09,-1.923,-1.855],["Sr3Ta2NiO9","O",3,-3.053,-2.954,-2.376],["Na4Eu2SnP4","P",3,-0.751,-0.734,-0.525],["Rb2NaVSe4","Se",3,-1.221,-1.114,-1.034],["K16TiSnP8","P",3,-0.51,-0.441,-0.405],["Al2ZnO4","O",2,-3.021,-2.959,-2.687],["SrEu2GaO5","O",3,-2.909,-3.018,-2.873],["Y3Pa(Co5P3)4","P",3,-0.761,-0.656,-0.526],["CsUCl6","Cl",2,-2.061,-2.166,-1.648],["Sn3Rh2Se3","Se",2,-0.608,-0.34,-0.332],["Na3(CuS)4","S",2,-0.793,-0.66,-0.656],["K2TcBr6","Br",2,-1.405,-1.294,-1.14],["Dy4CrMo5O24","O",3,-2.714,-2.493,-2.371],["Cs3CeNpBr9","Br",3,-2.073,-2.042,-1.705],["KTa(GeO3)3","O",3,-2.48,-2.355,-2.058],["Be3Tl2Co2F12","F",3,-2.811,-2.841,-2.662],["DyCo5P3","P",2,-0.828,-0.683,-0.545],["BaTbMn2O5","O",3,-2.787,-2.75,-2.589],["La2BiSbTe2","Te",3,-1.445,-1.203,-0.695],["Sr4La(CoO3)5","O",3,-2.092,-2.056,-2.047],["Ba3Lu4O9","O",2,-3.637,-3.624,-3.302],["Li17Cr2O12","O",2,-2.076,-2.085,-1.887],["Ca5ThU2O12","O",3,-3.522,-3.61,-2.991],["Cs4BiSbCl12","Cl",3,-1.807,-1.703,-1.406],["CoNi7IrS8","S",3,-0.464,-0.569,-0.567],["LiBi(PdO2)2","O",3,-1.384,-1.295,-1.149],["TbHoRuC2","C",3,-0.469,-0.322,-0.245],["Nd3GaS6","S",2,-1.999,-1.982,-1.982],["Ba2CeAlSe5","Se",3,-1.983,-1.894,-1.794],["KTaO3","O",2,-3.072,-2.713,-1.962],["RbCuO3","O",2,-0.659,-0.964,-0.964],["YbBeO3","O",2,-2.718,-3.267,-3.267],["Na5AlO4","O",2,-2.071,-1.926,-1.526],["Fe19Co5O32","O",2,-1.477,-1.607,-1.576],["Ti11CuP8","P",2,-1.106,-1.178,-1.133],["CeCrS3","S",2,-1.714,-1.711,-1.711],["KNb5O13","O",2,-3.0,-2.892,-2.623],["Rb2Hf6O13","O",2,-3.579,-3.607,-3.061],["Nd5Co16(MoP4)3","P",3,-0.808,-0.744,-0.575],["SmHo(SbTe)2","Te",3,-1.282,-1.022,-0.621],["Rb4(SnSe2)3","Se",2,-0.989,-0.856,-0.85],["HfZnN2","N",2,-1.242,-1.169,-1.009],["ZrTlF5","F",2,-3.488,-3.417,-2.824],["LaSm3(AuO3)4","O",3,-2.089,-2.162,-2.162],["ErTlTe2","Te",2,-1.244,-1.191,-0.94],["Li3TiCr2O6","O",3,-2.569,-2.472,-1.967],["La2ErUO7","O",3,-3.867,-3.867,-3.581],["NaTb9Se10","Se",2,-2.029,-1.982,-1.898],["Sr2Li5CuP5","P",3,-0.868,-0.826,-0.747],["Ti2ZnSn2O7","O",3,-2.523,-2.596,-2.342],["Sr2TiCrH10","H",3,-0.448,-0.392,-0.392],["LiCrN2","N",2,-0.678,-0.547,-0.547],["MgTa2(ReO6)2","O",3,-2.644,-2.74,-2.484],["Pa2VReC4","C",3,-0.504,-0.451,-0.451],["K3TaCl6","Cl",2,-1.887,-2.053,-1.71],["Rb5(PuI4)3","I",2,-1.635,-1.443,-1.287],["K5BaNbP4","P",3,-0.749,-0.625,-0.587],["Sr3Al2(GeO4)3","O",3,-2.708,-2.75,-2.542],["Li12CrGa11O24","O",3,-2.332,-2.196,-1.774],["UPaO4","O",2,-3.842,-3.887,-3.887],["K2Li3CoO4","O",3,-1.77,-1.632,-1.536],["Rb3AuBr6","Br",2,-1.324,-1.44,-1.333],["SrLa4TiCr4O15","O",4,-3.237,-3.164,-3.083],["Ba2MgTi2CuF14","F",4,-3.58,-3.658,-3.241],["Ba2Tl2Ni3O10","O",3,-1.119,-1.512,-1.442],["BaNdMnCoO6","O",4,-2.437,-2.379,-2.37],["Sr2Ca6Mn8O23","O",3,-2.489,-2.432,-2.357],["Li2Np(TaN2)3","N",3,-1.374,-1.203,-1.065],["PrSnF7","F",2,-3.458,-3.462,-3.322],["Dy7HoC10","C",2,-0.497,-0.479,-0.473],["La5Sm3VCr7O24","O",4,-3.063,-3.129,-3.129],["CsDyCdTe3","Te",3,-1.283,-1.168,-1.036],["PdRhPb2O7","O",3,-0.963,-1.185,-1.149],["Sr2AlCu2SbO7","O",4,-2.223,-2.249,-2.035],["Mg(GaS2)2","S",2,-1.182,-1.044,-1.0],["EuLu6PtI12","I",3,-1.515,-1.343,-1.213],["U2Al3C4","C",2,-0.321,-0.238,-0.23],["CsTlF3","F",2,-2.511,-2.364,-2.154],["YLuTcC2","C",3,-0.577,-0.268,-0.216],["Na2Np2O7","O",2,-2.896,-2.667,-2.208],["CsFeCoF6","F",3,-2.679,-2.587,-2.288],["RbCoN","N",2,-0.103,-0.183,-0.091],["Ba8ErUSe12","Se",3,-2.191,-2.155,-2.035],["Cs4Lu3Sb9Se20","Se",3,-0.929,-0.893,-0.808],["Zn(NiO2)2","O",2,-1.23,-1.21,-1.21],["K2Cr2F7","F",2,-3.008,-2.938,-2.479],["Ba(ZrSe2)3","Se",2,-1.759,-1.729,-1.655],["Na4GdSbO6","O",3,-2.247,-2.034,-1.65],["KCaEuWO6","O",4,-2.658,-2.584,-2.266],["Tl4CdI6","I",2,-0.842,-0.855,-0.793],["Mn(NbS2)3","S",2,-1.365,-1.364,-1.287],["Zr2NiSe4","Se",2,-1.287,-1.355,-1.17],["CaV4(AgO6)2","O",3,-2.204,-2.084,-1.892],["Ba2TlCuHgO5","O",4,-1.701,-1.644,-1.633],["Hf6FeCl15","Cl",2,-1.819,-1.981,-1.864],["Na3V6N11","N",2,-0.81,-0.867,-0.852],["Tb4Ir3RhO14","O",3,-2.323,-2.492,-2.407],["SrGeO4","O",2,-2.005,-2.181,-2.181],["Tb2Er(PuC2)5","C",3,-0.368,-0.331,-0.328],["CsTm2Cu3Se5","Se",3,-1.31,-1.262,-0.861],["CaLa2TiO6","O",3,-3.682,-3.652,-3.425],["Sr2MnNbO6","O",3,-2.995,-2.796,-2.443],["TbZr2TcF15","F",3,-3.712,-3.656,-3.487],["Ba2ScTaO6","O",3,-3.58,-3.28,-2.898],["UTl2O4","O",2,-2.525,-2.413,-1.789],["LiTi3V5O16","O",3,-2.791,-2.851,-2.681],["LaFeReO6","O",3,-2.427,-2.5,-2.183],["LaPr3Mn4O12","O",3,-2.951,-2.89,-2.89],["Y3Tm5(TcC2)4","C",3,-0.577,-0.372,-0.284],["GaIrCl6","Cl",2,-0.937,-1.264,-1.264],["Rb4YUSe6","Se",3,-1.671,-1.499,-1.318],["Pr4CuS7","S",2,-1.903,-2.017,-1.928],["Na5GaO4","O",2,-1.805,-1.637,-1.398],["Cr4InCuSe8","Se",3,-0.786,-0.729,-0.656],["MgSc2O4","O",2,-3.564,-3.703,-3.388],["Re6Pb5O19","O",2,-1.832,-1.818,-1.597],["Rb2AlInH6","H",3,-0.166,-0.124,-0.109],["MgTiNb2(PbO3)4","O",4,-2.517,-2.48,-2.082],["Sr2Ca14Mn14Al2O41","O",4,-2.61,-2.649,-2.537],["BaSrSmBiO6","O",4,-2.773,-2.636,-2.616],["ErCoH4","H",2,-0.506,-0.498,-0.416],["NaTa3(Co4P3)2","P",3,-0.654,-0.547,-0.507],["Ba2YCuO5","O",3,-2.501,-2.596,-2.427],["Sc(CuSe)3","Se",2,-0.777,-0.803,-0.525],["Na(RuO2)2","O",2,-1.475,-1.399,-1.21],["Li4Mn5Cr2O12","O",3,-2.153,-2.114,-1.876],["Zn3Cr8FeSe16","Se",3,-0.811,-0.811,-0.742],["TmMn4(CuO4)3","O",3,-1.841,-1.866,-1.838],["Ac4Mg2P5","P",2,-1.466,-0.396,-0.382],["Li8Fe2O9","O",2,-1.844,-1.795,-1.653],["Cs4MnWBr12","Br",3,-1.38,-1.47,-1.405],["HfMg14NiO16","O",3,-2.85,-3.035,-2.923],["MgCr3InO8","O",3,-2.051,-2.251,-2.227],["CaNdOsC2","C",3,-0.323,-0.182,-0.108],["CoBiTe","Te",2,-0.082,-0.152,-0.122],["Li4Fe2Ni3O10","O",3,-1.526,-1.529,-1.424],["K2GaAgCl6","Cl",3,-1.656,-1.672,-1.407],["Ba2DySbO6","O",3,-3.079,-2.73,-2.642],["Li4Co3CuO8","O",3,-1.606,-1.512,-1.42],["Y3Ga(FeO3)4","O",3,-2.629,-2.62,-2.62],["Li4Fe5(CoO6)2","O",3,-1.711,-1.722,-1.505],["EuCoNi4P3","P",3,-0.774,-0.611,-0.519],["NaYbCoH6","H",3,-0.444,-0.351,-0.343],["V3Cr2Sb3O16","O",3,-2.127,-2.179,-2.147],["MgTi23O40","O",2,-3.379,-3.383,-3.336],["SrLaMnO4","O",3,-3.028,-2.982,-2.815],["Mg14CoBiO16","O",3,-2.689,-2.827,-2.824],["MgScTl(MoO4)2","O",4,-2.117,-2.414,-2.22],["Al(CuSe2)3","Se",2,-0.181,-0.368,-0.368],["Sr(PmS2)2","S",2,-2.393,-2.36,-2.244],["CaYIr2O7","O",3,-2.077,-2.194,-2.102],["Sr2NiOsO6","O",3,-2.08,-2.058,-1.823],["Rb2PrAgF6","F",3,-3.113,-3.157,-2.449],["AgMo12PbS16","S",3,-0.716,-0.773,-0.712],["SrPrBi2O7","O",3,-2.104,-2.233,-2.223],["Ho5Al2GaC4","C",3,-0.622,-0.25,-0.227],["Sr10Cu5Mo3(WO15)2","O",4,-2.405,-2.231,-1.96],["Rb4ScReCl12","Cl",3,-1.78,-1.93,-1.552],["K8HoNp3F20","F",3,-3.574,-3.443,-2.646],["Mg2Bi3O8","O",2,-1.803,-1.945,-1.901],["CaYb2PuN4","N",3,-1.663,-1.305,-1.296],["NdPa3CuTe12","Te",3,-0.91,-0.706,-0.601],["La4Cd4In2S13","S",3,-1.525,-1.522,-1.407],["NdHo(ReO4)6","O",3,-2.071,-2.319,-2.212],["VHgO3","O",2,-1.788,-1.768,-1.521],["RbAu3Se2","Se",2,-0.609,-0.493,-0.372],["CsErMnSe3","Se",3,-1.562,-1.522,-1.337],["Mg4(MoO4)3","O",2,-2.426,-2.422,-2.134],["Rb(NbSe2)3","Se",2,-1.147,-1.041,-1.027],["Li4Mn2V3O12","O",3,-2.347,-2.192,-1.894],["SmPuO4","O",2,-3.529,-3.445,-3.356],["NpMoN2","N",2,-1.24,-1.162,-1.087],["TiCr2P3","P",2,-0.632,-0.701,-0.701],["Na5Sr(MnN2)4","N",3,-0.551,-0.299,-0.262],["Nd2NpS5","S",2,-2.231,-2.195,-2.195],["NaRuN","N",2,0.012,-0.074,-0.037],["AcEuTcH6","H",3,-0.641,-0.534,-0.464],["Tb4OsWC4","C",3,-0.5,-0.371,-0.311],["Ba2SrPaO6","O",3,-3.178,-3.086,-2.746],["TiZnSnO4","O",3,-2.429,-2.481,-2.187],["NaZrCuTe3","Te",3,-0.932,-0.83,-0.665],["Tm5CuTe4","Te",2,-1.223,-1.126,-0.95],["BaAlCo4O7","O",3,-1.895,-1.934,-1.82],["Pr2Ta2Bi2O11","O",3,-2.86,-2.958,-2.618],["Li2Mn2SbO6","O",3,-2.05,-1.979,-1.739],["Rb2DyHo5F20","F",3,-4.311,-4.233,-3.677],["Ni(RhS4)2","S",2,-0.435,-0.439,-0.439],["Pr5ThBiO12","O",3,-3.288,-3.374,-3.27],["Li3TiS3","S",2,-1.519,-1.534,-1.35],["Li2Ge2O5","O",2,-2.245,-2.125,-1.636],["Na2Ca(MnN2)2","N",3,-0.663,-0.383,-0.366],["Tb5DyTe3","Te",2,-1.049,-1.033,-1.032],["Ba2La2MgTi3O12","O",4,-3.558,-3.41,-3.113],["Cs6SmNpBr12","Br",3,-2.107,-2.052,-1.747],["CeNiP","P",2,-1.168,-1.171,-0.824],["Sr4Fe6O13","O",2,-2.185,-2.183,-2.071],["YbNb8NiSe16","Se",3,-1.067,-1.072,-1.055],["La3MgTi4O12","O",3,-3.539,-3.523,-3.409],["La2MnVO6","O",3,-3.159,-3.101,-3.075],["Ba2PrWO6","O",3,-3.018,-2.797,-2.6],["ErMn2O5","O",2,-2.657,-2.581,-2.563],["Eu2CoRuO6","O",3,-2.339,-2.414,-2.37],["Ca6Co3RhO12","O",3,-2.359,-2.391,-2.295],["KLi6NpO6","O",3,-2.452,-2.32,-1.817],["Sc5Re2C7","C",2,-0.597,-0.455,-0.428],["Cs2Mo5O16","O",2,-2.033,-1.828,-1.723],["LiNb(AgS2)2","S",3,-0.796,-0.879,-0.645],["CeDyReC2","C",3,-0.484,-0.321,-0.252],["CsCrF4","F",2,-3.094,-2.971,-2.377],["HoBeCuP2","P",3,-0.896,-0.874,-0.624],["LaNd6ThSe12","Se",3,-2.214,-2.183,-2.181],["Pr2Gd3(TcO6)2","O",3,-3.066,-3.157,-3.029],["SrCaCr2O6","O",3,-2.545,-2.506,-2.483],["NaEr(NbSe2)8","Se",3,-1.16,-1.131,-1.1],["Pa4TaNb3N8","N",3,-1.616,-1.573,-1.551],["Li4CrFe(WO6)2","O",4,-2.11,-2.026,-1.642],["RbCaO3","O",2,-1.484,-1.906,-1.861],["Li12OsRuN8","N",3,-0.546,-0.363,-0.36],["CeThCl8","Cl",2,-2.27,-2.409,-2.409],["AcVF7","F",2,-3.719,-3.631,-3.512],["BaYMnCoO5","O",4,-2.587,-2.563,-2.399],["Rb2NaScCl6","Cl",3,-2.402,-2.349,-1.867],["CsTm(NbBr3)6","Br",3,-1.51,-1.476,-1.39],["Ba3PrF9","F",2,-4.168,-4.222,-3.9],["Ce(PrS2)2","S",2,-2.322,-2.358,-2.348],["La5TlS8","S",2,-2.27,-2.294,-2.155],["CsSbO2","O",2,-1.854,-1.537,-1.342],["Li2FeCoP2","P",3,-0.64,-0.632,-0.589],["Ba2PaCu2S5","S",3,-1.68,-1.44,-1.324],["Na2Ti9O19","O",2,-3.338,-3.3,-2.967],["Er8Os3WC8","C",3,-0.546,-0.27,-0.228],["KRb2Se3","Se",2,-1.106,-1.165,-1.165],["Ba(LaSe2)2","Se",2,-2.341,-2.335,-2.213],["Er2OsC2","C",2,-0.407,-0.27,-0.218],["Cs2CoO3","O",2,-1.373,-1.259,-1.24],["Ag2(RhS)15","S",2,-0.462,-0.526,-0.489],["LaPbF7","F",2,-3.122,-3.216,-3.148],["LiGaSe2","Se",2,-1.064,-0.982,-0.889],["Ge(PbS2)2","S",2,-0.754,-0.654,-0.56],["Rb4RePtBr12","Br",3,-1.214,-1.168,-1.103],["Na2ZrO3","O",2,-2.866,-2.62,-1.834],["YbEr6NiI12","I",3,-1.368,-1.302,-1.164],["LiSc2(AgO2)2","O",3,-2.479,-2.601,-1.693],["Cs2RbTlCl6","Cl",3,-1.845,-1.801,-1.669],["Ca2AlCuO5","O",3,-2.688,-2.658,-2.486],["Pr5CoPtO12","O",3,-2.721,-2.769,-2.749],["Rb3Ba(USe3)2","Se",3,-1.757,-1.568,-1.385],["SrMg14SnO16","O",3,-2.773,-2.953,-2.953],["NdEr2BiO7","O",3,-3.033,-3.104,-3.097],["BaLiPrS3","S",3,-2.17,-2.14,-1.935],["ZrSc(VP)2","P",3,-1.184,-1.065,-0.986],["La3Sc2(GaO4)3","O",3,-3.381,-3.297,-3.297],["CsKMg14O15","O",3,-2.566,-2.861,-2.729],["HoCr2O6","O",2,-2.333,-2.496,-2.484],["TiAlN2","N",2,-1.604,-1.811,-1.811],["In(ReO4)3","O",2,-1.644,-2.021,-1.912],["Mg14CrNiO16","O",3,-2.827,-2.881,-2.858],["SmGeRu2C","C",3,-0.562,-0.133,-0.044],["Th2Cr3Ni9P7","P",3,-0.803,-0.676,-0.543],["Zn2Cr2O5","O",2,-1.748,-2.111,-1.892],["LiUNbO6","O",3,-3.215,-3.129,-2.591],["La3BeSbS7","S",3,-1.799,-1.83,-1.755],["MnCr3O8","O",2,-1.897,-1.991,-1.991],["Sc2Mn12P7","P",2,-0.72,-0.761,-0.698],["Ti7Co3N10","N",2,-1.155,-1.36,-1.36],["Er25Ni49P33","P",2,-1.03,-0.988,-0.697],["Cs2TmAgF6","F",3,-3.239,-3.027,-2.313],["Cs3TlF6","F",2,-2.673,-2.539,-2.223],["Sm6TcI10","I",2,-1.401,-1.317,-1.16],["Nd5DyRuI10","I",3,-1.458,-1.375,-1.167],["Re3TcS8","S",2,-0.669,-0.665,-0.665],["Dy6NiI10","I",2,-1.409,-1.296,-1.158],["Ca2YUN4","N",3,-1.655,-1.482,-1.315],["NdEu(TaN2)2","N",3,-1.457,-1.35,-1.35],["Li19NiIr4N9","N",3,-0.468,-0.376,-0.372],["YbNb4O8","O",2,-2.788,-2.979,-2.947],["Mg2Nb2AgO8","O",3,-2.612,-2.637,-2.091],["KAgF4","F",2,-2.027,-1.849,-1.793],["SrEuSe2","Se",2,-2.339,-2.355,-2.355],["Na2Zr(CuS2)2","S",3,-1.244,-1.123,-0.849],["Eu2Al2O5","O",2,-3.268,-3.292,-3.237],["SmY6FeI12","I",3,-1.378,-1.369,-1.234],["BaCa(BiO2)4","O",3,-1.959,-2.044,-1.934],["Rb4TiO4","O",2,-2.32,-1.925,-1.483],["Ti2GaTc2C3","C",3,-0.579,-0.483,-0.324],["Nd5TmTa2O14","O",3,-3.652,-3.678,-3.362],["Dy2Sn3(PbS4)3","S",3,-1.135,-1.003,-0.967],["La5Ti4O15","O",2,-3.718,-3.679,-3.522],["Th2TcC2","C",2,-0.413,-0.345,-0.241],["Mn3CoN3","N",2,-0.239,-0.28,-0.28],["Er4AlSe3","Se",2,-1.578,-1.444,-1.282],["TiNb6PbS12","S",3,-1.299,-1.367,-1.317],["Li2TiO3","O",2,-2.982,-2.785,-2.069],["LiCrPbF6","F",3,-2.944,-2.948,-2.537],["Yb3LuTi4O12","O",3,-3.495,-3.687,-3.687],["K2TiCl6","Cl",2,-2.18,-2.155,-1.618],["La3Tb3FeBr10","Br",3,-1.828,-1.887,-1.68],["Ba2Mg2Tl2Ni3O10","O",4,-1.783,-1.902,-1.851],["TaReO6","O",2,-2.561,-2.604,-2.531],["Cu3SbSe3","Se",2,-0.202,-0.203,-0.192],["ScNb6InBr18","Br",3,-1.188,-1.366,-1.327],["LaTa3O9","O",2,-3.524,-3.448,-3.178],["NaSrDyWO6","O",4,-2.908,-2.707,-2.371],["BaPaH7","H",2,-0.423,-0.386,-0.386],["Ti3Mn3Cr2O16","O",3,-2.404,-2.511,-2.511],["YMn4VP3","P",3,-0.878,-0.864,-0.761],["DyHo4Re2C7","C",3,-0.532,-0.306,-0.262],["Sr4Li(RuO4)3","O",3,-2.255,-2.098,-1.935],["Ge3Rh2Se3","Se",2,-0.68,-0.339,-0.331],["LiAlVF6","F",3,-3.447,-3.422,-2.849],["Gd6LuScO12","O",3,-3.812,-3.933,-3.933],["Re8Pb8O27","O",2,-1.763,-1.804,-1.573],["Li6Cr5CuO12","O",3,-2.191,-2.094,-1.725],["Er3Tm(Rh2O7)2","O",3,-2.378,-2.513,-2.43],["MgAuN","N",2,-0.12,-0.523,-0.393],["TlIn5Se7","Se",2,-0.659,-0.65,-0.625],["CsHfCuSe3","Se",3,-1.31,-1.161,-0.867],["K3SbF8","F",2,-2.841,-2.748,-2.184],["Sc7Co16ReP12","P",3,-0.941,-0.817,-0.623],["Ta3TcS6","S",2,-1.133,-1.243,-1.158],["Ac3Sm(TcN3)4","N",3,-0.813,-0.643,-0.643],["Ba3SrSb2O9","O",3,-2.711,-2.342,-2.212],["KPr(SnO3)2","O",3,-2.366,-2.382,-2.169],["TbSm5I18","I",2,-1.639,-1.677,-1.677],["Ba4Ga2S7","S",2,-1.852,-1.745,-1.705],["CaEr4Zr4O14","O",3,-3.537,-3.796,-3.606],["SmYS2","S",2,-2.248,-2.258,-2.258],["BiPtO3","O",2,-0.755,-1.249,-1.249],["V4GeSe8","Se",2,-0.95,-0.863,-0.863],["Li3La7(FeO8)2","O",3,-3.064,-3.073,-2.783],["LiAuF6","F",2,-1.763,-1.637,-1.45],["BaSrPrCoO6","O",4,-2.455,-2.516,-2.491],["Rb2TiHgSe4","Se",3,-1.165,-1.117,-0.982],["CaSn5S11","S",2,-0.761,-0.705,-0.682],["CsInTe2","Te",2,-0.94,-0.745,-0.738],["Cs2TbAgCl6","Cl",3,-2.213,-2.144,-1.639],["LiZrS2","S",2,-1.744,-1.724,-1.435],["Co3PtF6","F",2,-1.129,-2.107,-1.874],["K8Y6BeBr20","Br",3,-1.934,-1.976,-1.708],["Na(HfS2)2","S",2,-1.775,-1.675,-1.453],["TbSc(NbSe2)8","Se",3,-1.237,-1.215,-1.211],["Sr11(OsO6)4","O",2,-2.586,-2.38,-2.144],["Dy4CdSe7","Se",2,-1.875,-1.942,-1.867],["TlCu3Se2","Se",2,-0.243,-0.221,-0.211],["Tc2PbO8","O",2,-1.578,-1.739,-1.579],["GdZr3F15","F",2,-4.1,-4.023,-3.826],["BaMgNiF7","F",3,-3.163,-3.122,-3.105],["CaSmTcH6","H",3,-0.673,-0.535,-0.483],["In9(CuSe4)4","Se",2,-0.448,-0.574,-0.524],["CsPuHgSe3","Se",3,-1.364,-1.287,-1.099],["SrNdMgWO6","O",4,-2.892,-2.916,-2.656],["Y3Sc2(GaO4)3","O",3,-3.378,-3.326,-3.326],["Tl2CrO4","O",2,-1.513,-1.525,-1.466],["Sr5(PbN3)2","N",2,-0.286,-0.555,-0.478],["CsSn3RhO8","O",3,-1.693,-1.806,-1.617],["BaSr(IrCl6)2","Cl",3,-1.375,-1.575,-1.575],["K6ScInP4","P",3,-0.683,-0.588,-0.486],["TlSnI3","I",2,-0.805,-0.793,-0.72],["Li4Ti2Cr3Fe3O16","O",4,-2.323,-2.301,-1.981],["Dy4MgTi2O10","O",3,-3.524,-3.685,-3.532],["LaEu2NbO6","O",3,-3.327,-3.355,-3.355],["Cs2Sn(WO4)3","O",3,-2.305,-2.009,-1.722],["Yb4CoO6","O",2,-2.955,-3.684,-3.209],["Cs8(Re4S9)3","S",2,-1.048,-0.777,-0.735],["K2Rb4Fe2O5","O",3,-1.455,-1.264,-1.179],["LaPr3(In2Br5)4","Br",3,-1.505,-1.635,-1.391],["NaSr3USe6","Se",3,-1.931,-1.901,-1.739],["NaCaDyWO6","O",4,-2.84,-2.753,-2.394],["Rb4AcUTe6","Te",3,-1.377,-1.276,-1.127],["BaLa2Ti3O10","O",3,-3.679,-3.533,-3.287],["Nd2NbGaO7","O",3,-3.246,-3.2,-2.934],["Na10CuAuSe24","Se",3,-0.604,-0.59,-0.59],["Er2SbRhO7","O",3,-2.617,-2.678,-2.585],["LaBeOs2C","C",3,-0.312,-0.144,-0.072],["LaPdO3","O",2,-2.362,-2.314,-2.314],["SmV3(CoH6)2","H",3,-0.254,-0.278,-0.252],["PrYSe2","Se",2,-2.063,-2.055,-2.055],["KLaNbWO6","O",4,-2.729,-2.683,-2.376],["Gd2MgCr2O8","O",3,-2.73,-2.911,-2.883],["Cs4U3Mo3O20","O",3,-2.765,-2.451,-2.161],["DyCuSe2","Se",2,-1.419,-1.411,-1.092],["Zn3Fe4(BiO4)6","O",3,-1.381,-1.462,-1.456],["Np2SbO2","O",2,-2.643,-2.161,-1.83],["Li2NbCo3O8","O",3,-1.962,-1.893,-1.562],["RbNbCl6","Cl",2,-1.912,-1.868,-1.424],["Pr5VWO12","O",3,-3.322,-3.248,-3.095],["BeInO3","O",2,-1.528,-2.238,-2.238],["HoU(AlC)6","C",3,-0.408,-0.246,-0.244],["LiHoSe2","Se",2,-1.963,-1.91,-1.525],["Yb6ReRhO12","O",3,-2.935,-3.466,-3.39],["YbCe2UH12","H",3,-0.586,-0.589,-0.582],["TmAgTe2","Te",2,-1.056,-1.057,-0.739],["Sr2ErUO6","O",3,-3.631,-3.546,-3.137],["YAgS2","S",2,-1.558,-1.534,-1.166],["Al2W5O16","O",2,-2.269,-2.427,-2.252],["Tm4MnCdS8","S",3,-1.987,-1.975,-1.843],["Mn(Ni9O10)2","O",2,-1.232,-1.265,-1.232],["Nd5ReRuO12","O",3,-3.004,-3.11,-2.945],["K2ScInCl6","Cl",3,-2.122,-2.154,-1.75],["Na4TmUSe6","Se",3,-1.651,-1.495,-1.191],["TmHf(Sc2H9)2","H",3,-0.593,-0.557,-0.557],["Sm(LuTe2)2","Te",2,-1.609,-1.6,-1.585],["CrReMoO8","O",3,-1.973,-2.066,-1.914],["MgFe2(SbO3)4","O",3,-1.812,-1.931,-1.794],["Lu5Al2HgC4","C",3,-0.657,-0.301,-0.278],["ZnSb3O7","O",2,-1.612,-1.83,-1.675],["YLu2I9","I",2,-1.598,-1.632,-1.632],["SrHfInSbO6","O",4,-2.65,-2.758,-2.479],["NdYMn12P7","P",3,-0.727,-0.789,-0.705],["Tc2WS4","S",2,-0.776,-0.69,-0.667],["Ho6ErFeO12","O",3,-3.677,-3.741,-3.741],["Li4MnGe2S7","S",3,-1.115,-1.092,-0.983],["LiRuF6","F",2,-2.4,-2.304,-1.735],["MgNbBi3O7","O",3,-2.044,-2.189,-1.983],["Ba4YSbO8","O",3,-2.888,-2.738,-2.583],["Sr2DyGaCu2O7","O",4,-2.497,-2.443,-2.199],["Sc2GaC","C",2,-0.625,-0.389,-0.26],["Cs2GaCuCl6","Cl",3,-1.648,-1.667,-1.43],["Nd3AlFeS7","S",3,-1.854,-1.805,-1.746],["Mn3Nb4FeP4","P",3,-0.792,-0.71,-0.699],["Ca10TiWN10","N",3,-1.25,-0.976,-0.931],["Ba2TlNi2O7","O",3,-1.342,-1.674,-1.612],["Li2Fe3Co9P7","P",3,-0.546,-0.478,-0.466],["Co21Cu3O32","O",2,-1.291,-1.29,-1.269],["Cs2ZnBi2S5","S",3,-0.919,-0.774,-0.774],["Ca3Tl4O9","O",2,-1.932,-1.928,-1.848],["Cs4NbInCl12","Cl",3,-1.814,-1.903,-1.505],["HoTmTcC2","C",3,-0.584,-0.354,-0.273],["Nd6MoO12","O",2,-3.418,-3.391,-3.274],["SrYAl3O7","O",3,-3.557,-3.478,-3.296],["Tb2Nd5FeI12","I",3,-1.408,-1.39,-1.248],["Mg(NiN)2","N",2,0.006,-0.314,-0.314],["Ta20Pd9S50","S",2,-1.209,-1.16,-1.065],["Ba3YbNiO6","O",3,-2.641,-2.704,-2.528],["CaTi2(CuO4)2","O",3,-2.393,-2.455,-2.177],["Zn(Bi19O30)2","O",2,-1.599,-1.629,-1.624],["Ba5Y2CuMo2O15","O",4,-2.79,-2.599,-2.458],["Li13Nb14ZnO42","O",3,-2.858,-2.729,-1.998],["Na3NpO10","O",2,-1.28,-1.446,-1.446],["Tb2Ru2O7","O",2,-2.59,-2.605,-2.506],["Ba3Ho2Cu2PtO10","O",4,-2.504,-2.413,-2.222],["In2Ge5N8","N",2,-0.088,-0.171,-0.16],["MgMn2Zn2O12","O",3,-1.051,-1.422,-1.422],["Sr2GeO4","O",2,-2.912,-2.682,-2.418],["BaSr7Ti7MnO24","O",4,-3.406,-3.194,-2.838],["Li4Ti4VCr4O18","O",4,-2.763,-2.765,-2.316],["K3Na(CeSe3)2","Se",3,-1.745,-1.593,-1.434],["YHo4Re2C7","C",3,-0.528,-0.27,-0.235],["SrEuS2","S",2,-2.425,-2.444,-2.444],["Tb2LuBi5O14","O",3,-2.158,-2.363,-2.354],["La2MgCoO6","O",3,-2.834,-2.867,-2.865],["DyTa3O9","O",2,-3.322,-3.473,-3.203],["Ba2Mn2AlTlO7","O",4,-2.161,-2.389,-2.248],["Ca3IrO6","O",2,-2.349,-2.376,-2.268],["Li4Mn3NbO8","O",3,-2.332,-2.266,-1.873],["HfCu6MoS8","S",3,-0.682,-0.672,-0.51],["Tb4PdPt3O14","O",3,-2.244,-2.288,-2.238],["MgZn2(FeO3)2","O",3,-1.906,-1.98,-1.837],["K2LiCrF6","F",3,-3.143,-3.018,-2.488],["NbMoS4","S",2,-1.26,-1.157,-1.157],["CaNiO3","O",2,-1.77,-1.812,-1.812],["SrEuZr4O12","O",3,-3.155,-3.388,-3.388],["Sr4CaCr5O15","O",3,-2.538,-2.478,-2.469],["DyTcMo5S8","S",3,-1.068,-1.025,-0.966],["RbGaO2","O",2,-2.051,-1.843,-1.562],["Nd4Dy(ThSe4)3","Se",3,-2.13,-2.108,-2.102],["Sr3Mn4O12","O",2,-2.161,-2.147,-2.122],["Ca6UWO12","O",3,-3.265,-3.144,-2.64],["Dy3ScTe4","Te",2,-1.472,-1.469,-1.468],["Tb3Nb(Co4P3)2","P",3,-0.959,-0.865,-0.649],["TaNiTe5","Te",2,-0.596,-0.483,-0.41],["K2ZnGeO4","O",3,-2.045,-1.719,-1.495],["CaEuYNbO6","O",4,-3.293,-3.38,-3.175],["ZnCr2CoO7","O",3,-1.619,-1.744,-1.713],["NaYbO2","O",2,-3.191,-3.068,-2.338],["LaWN3","N",2,-1.244,-0.909,-0.909],["Rb4CaPaO6","O",3,-2.418,-2.286,-1.876],["Li4Mn3V5O16","O",3,-2.345,-2.306,-1.994],["Sr2DyPtO6","O",3,-2.498,-2.533,-2.492],["Cs7Cd3Br13","Br",2,-1.757,-1.729,-1.625],["Cs2YInF6","F",3,-3.32,-3.277,-2.596],["Cs3Cr2Br9","Br",2,-1.625,-1.575,-1.418],["Sm(AlBr4)3","Br",2,-1.731,-1.713,-1.713],["CrCo2Rh3O8","O",3,-1.303,-1.374,-1.34],["DyScO3","O",2,-3.961,-3.987,-3.987],["KSrNbBiO6","O",4,-2.501,-2.345,-1.99],["AlTlO3","O",2,-2.188,-2.263,-2.263],["Cs2LiScCl6","Cl",3,-2.427,-2.362,-1.856],["Li9Mn12Ni3O32","O",3,-1.962,-1.803,-1.691],["PrNd5RhBr10","Br",3,-1.878,-1.818,-1.651],["Mg2Cr3NiS8","S",3,-1.083,-1.13,-1.081],["K2NaAuCl6","Cl",3,-1.513,-1.607,-1.494],["TbRhF7","F",2,-2.916,-2.951,-2.876],["HoTa8VS16","S",3,-1.393,-1.451,-1.425],["Ti3NbO8","O",2,-3.324,-3.355,-3.355],["ZnFe5O8","O",2,-1.685,-1.687,-1.625],["YbSc6CoBr12","Br",3,-1.697,-1.671,-1.531],["Lu2V2O7","O",2,-3.262,-3.25,-3.138],["Li2FeGeS4","S",3,-0.998,-0.906,-0.811],["Cd2InBiO6","O",3,-1.328,-1.475,-1.447],["Cs2CuSbBr6","Br",3,-1.361,-1.328,-1.246],["Sr2EuNbO6","O",3,-3.207,-3.154,-2.801],["AgSbPbS3","S",3,-0.366,-0.365,-0.325],["Sr10Li24NiN15","N",3,-0.564,-0.537,-0.485],["KCu2SbSe3","Se",3,-0.642,-0.487,-0.445],["Mg2Mo3O8","O",2,-2.288,-2.393,-2.101],["LiCr2O3","O",2,-2.188,-2.159,-1.865],["Pr3(OsO5)2","O",2,-2.454,-2.583,-2.402],["Ti3NiBi2(PbO6)2","O",4,-2.401,-2.405,-2.122],["Yb(ZrSe2)3","Se",2,-1.697,-1.729,-1.729],["NaLaTi2O6","O",3,-3.436,-3.288,-2.887],["Li13Mn17O40","O",2,-2.046,-1.896,-1.78],["Ce3CuSnSe7","Se",3,-1.548,-1.53,-1.384],["RbCr4BiO14","O",3,-1.714,-1.611,-1.608],["Zr4Ti3MoP4","P",3,-1.25,-1.083,-1.024],["TbCrF7","F",2,-3.491,-3.432,-3.384],["Li2TcBr6","Br",2,-1.146,-1.213,-1.05],["YbYOsC2","C",3,-0.495,-0.309,-0.26],["DyU4Re3C8","C",3,-0.345,-0.263,-0.203],["Ba2LaTlCu2O7","O",4,-2.185,-2.106,-1.937],["NaEr(ReN3)2","N",3,-0.582,-0.51,-0.477],["Li2V3CuO8","O",3,-2.245,-2.198,-1.828],["PrEuMnSbO6","O",4,-2.623,-2.752,-2.735],["K6CoS4","S",2,-1.091,-1.105,-1.095]],"cr_mo_example":{"hull_cr":[[0.0,0.0],[3.0,-2.3666],[4.0,-2.0477],[4.8,-1.8322]],"hull_mo":[[0.0,0.0],[4.0,-2.1055],[6.0,-1.9246]],"cr_red":[0.31888700000000014,-0.6377740000000003,2.0],"mo_ox":[0.0,0.0904395,2.0],"paper_cr_red":[0.319,-0.638],"paper_mo_ox":[0.022,0.003],"z":[0.0,0.025,0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.225,0.25,0.275,0.3,0.325,0.35,0.375,0.4,0.425,0.45,0.475,0.5,0.525,0.55,0.575,0.6,0.625,0.65,0.675,0.7,0.725,0.75,0.775,0.8,0.825,0.85,0.875,0.9,0.925,0.95,0.975,1.0],"delta_d":{"linear":[0.0,-0.0039,-0.0077,-0.0116,-0.0155,-0.0193,-0.0232,-0.0271,-0.031,-0.0348,-0.0387,-0.0426,-0.0464,-0.0503,-0.0542,-0.058,-0.0619,-0.0658,-0.0697,-0.0735,-0.0774,-0.0813,-0.0851,-0.089,-0.0929,-0.0967,-0.1006,-0.1006,-0.0929,-0.0851,-0.0774,-0.0697,-0.0619,-0.0542,-0.0464,-0.0387,-0.031,-0.0232,-0.0155,-0.0077,0.0],"quadratic":[0.0,-0.0029,-0.0058,-0.0087,-0.0117,-0.0146,-0.0175,-0.0204,-0.0233,-0.0262,-0.0292,-0.0321,-0.035,-0.0379,-0.0408,-0.0437,-0.0466,-0.0496,-0.0525,-0.0554,-0.0583,-0.0612,-0.0641,-0.0671,-0.07,-0.0729,-0.0758,-0.0787,-0.0816,-0.0845,-0.0873,-0.0879,-0.086,-0.0816,-0.0751,-0.0667,-0.0564,-0.0445,-0.031,-0.0162,0.0],"paper":[0.0,-0.0057,-0.0112,-0.0166,-0.0219,-0.0271,-0.0321,-0.0369,-0.0416,-0.046,-0.0503,-0.0543,-0.0581,-0.0616,-0.0648,-0.0676,-0.0701,-0.0722,-0.0738,-0.0749,-0.0754,-0.0753,-0.0744,-0.0727,-0.0701,-0.0664,-0.0614,-0.0551,-0.0471,-0.0373,-0.0256,-0.0117,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]},"mp_points":[["CrMoO4",0.5,-0.0903]],"hull_x":[0.0,0.025,0.05,0.075,0.1,0.125,0.15,0.175,0.2,0.225,0.25,0.275,0.3,0.325,0.35,0.375,0.4,0.425,0.45,0.475,0.5,0.525,0.55,0.575,0.6,0.625,0.65,0.675,0.7,0.725,0.75,0.775,0.8,0.825,0.85,0.875,0.9,0.925,0.95,0.975,1.0,1.025,1.05,1.075,1.1,1.125,1.15,1.175,1.2,1.225,1.25,1.275,1.3,1.325,1.35,1.375,1.4,1.425,1.45,1.475,1.5,1.525,1.55,1.575,1.6,1.625,1.65,1.675,1.7,1.725,1.75,1.775,1.8,1.825,1.85,1.875,1.9,1.925,1.95,1.975,2.0],"hull_cr_rel":[0.0,-0.0067,-0.0134,-0.0202,-0.027,-0.0339,-0.0409,-0.0479,-0.055,-0.0621,-0.0693,-0.0766,-0.0839,-0.0913,-0.0988,-0.1063,-0.1139,-0.1215,-0.1293,-0.1371,-0.1449,-0.1529,-0.1609,-0.169,-0.1772,-0.1854,-0.1937,-0.2021,-0.2106,-0.2191,-0.2278,-0.2365,-0.2453,-0.2542,-0.2632,-0.2722,-0.2814,-0.2906,-0.2999,-0.3094,-0.3189,-0.311,-0.303,-0.2949,-0.2867,-0.2784,-0.2701,-0.2617,-0.2531,-0.2445,-0.2358,-0.2271,-0.2182,-0.2092,-0.2001,-0.191,-0.1817,-0.1723,-0.1628,-0.1533,-0.1436,-0.1338,-0.1239,-0.1139,-0.1037,-0.0935,-0.0831,-0.0727,-0.062,-0.0513,-0.0405,-0.0295,-0.0184,-0.0071,0.0043,0.0158,0.0274,0.0392,0.0512,0.0633,0.0755],"hull_mo_rel":[0.0,0.003,0.006,0.0089,0.0119,0.0148,0.0176,0.0205,0.0233,0.0262,0.0289,0.0317,0.0345,0.0372,0.0399,0.0426,0.0452,0.0479,0.0505,0.0531,0.0557,0.0582,0.0608,0.0633,0.0658,0.0683,0.0707,0.0732,0.0756,0.078,0.0804,0.0828,0.0851,0.0875,0.0898,0.0921,0.0944,0.0966,0.0989,0.1011,0.1034,0.1056,0.1078,0.1099,0.1121,0.1142,0.1164,0.1185,0.1206,0.1227,0.1247,0.1268,0.1288,0.1309,0.1329,0.1349,0.1369,0.1389,0.1408,0.1428,0.1447,0.1466,0.1485,0.1504,0.1523,0.1542,0.1561,0.1579,0.1597,0.1616,0.1634,0.1652,0.167,0.1687,0.1705,0.1723,0.174,0.1757,0.1775,0.1792,0.1809],"cr2o3":[1.0,-0.3189],"moo3":[2.0,0.1809]},"examples":[{"formula":"SrTiO3","anion":"O","mean_os":3.0,"mp":-3.552,"linear":-3.335,"quadratic":-3.238,"paper":-3.292,"reference":-2.928,"oxidation_states":{"Sr":2.0,"Ti":4.0}},{"formula":"BaTiO3","anion":"O","mean_os":3.0,"mp":-3.479,"linear":-3.221,"quadratic":-3.134,"paper":-3.15,"reference":-2.855,"oxidation_states":{"Ba":2.0,"Ti":4.0}},{"formula":"LiCoO2","anion":"O","mean_os":2.0,"mp":-1.746,"linear":-1.581,"quadratic":-1.574,"paper":-1.693,"reference":-1.461,"oxidation_states":{"Co":2.78,"Li":1.22}},{"formula":"MgAl2O4","anion":"O","mean_os":2.667,"mp":-3.37,"linear":-3.316,"quadratic":-3.141,"paper":-3.297,"reference":-3.044,"oxidation_states":{"Al":3.0,"Mg":2.0}},{"formula":"NiFe2O4","anion":"O","mean_os":2.667,"mp":-1.591,"linear":-1.567,"quadratic":-1.491,"paper":-1.544,"reference":-1.444,"oxidation_states":{"Fe":3.0,"Ni":2.0}},{"formula":"LiNbO3","anion":"O","mean_os":3.0,"mp":-2.9,"linear":-2.742,"quadratic":-2.754,"paper":-2.547,"reference":-1.995,"oxidation_states":{"Li":1.0,"Nb":5.0}},{"formula":"Ba2YCu3O7","anion":"O","mean_os":2.333,"mp":-2.167,"linear":-2.088,"quadratic":-2.06,"paper":-2.043,"reference":-1.926,"oxidation_states":{"Ba":2.5,"Cu":2.0,"Y":3.0}},{"formula":"CuFeS2","anion":"S","mean_os":2.0,"mp":-0.253,"linear":-0.374,"quadratic":-0.372,"paper":-0.326,"reference":-0.326,"oxidation_states":{"Cu":0.0,"Fe":4.0}},{"formula":"AgInSe2","anion":"Se","mean_os":2.0,"mp":-0.651,"linear":-0.512,"quadratic":-0.499,"paper":-0.469,"reference":-0.462,"oxidation_states":{"Ag":1.0,"In":3.0}},{"formula":"Li2ZrN2","anion":"N","mean_os":2.0,"mp":-1.362,"linear":-1.122,"quadratic":-1.097,"paper":-0.961,"reference":-0.812,"oxidation_states":{"Li":1.0,"Zr":4.0}},{"formula":"KMgF3","anion":"F","mean_os":1.5,"mp":-3.536,"linear":-3.46,"quadratic":-3.203,"paper":-3.371,"reference":-2.938,"oxidation_states":{"K":1.0,"Mg":2.0}},{"formula":"Cs2AgBiBr6","anion":"Br","mean_os":1.5,"mp":-1.456,"linear":-1.422,"quadratic":-1.373,"paper":-1.484,"reference":-1.273,"oxidation_states":{"Ag":1.0,"Bi":3.0,"Cs":1.0}},{"formula":"LiAlH4","anion":"H","mean_os":2.0,"mp":-0.217,"linear":-0.212,"quadratic":-0.213,"paper":-0.281,"reference":-0.196,"oxidation_states":{"Al":3.0,"Li":1.0}},{"formula":"Sr2FeMoO6","anion":"O","mean_os":3.0,"mp":-2.533,"linear":-2.358,"quadratic":-2.341,"paper":-2.41,"reference":-2.177,"oxidation_states":{"Fe":3.0,"Mo":5.0,"Sr":2.0}}],"residual_vs_chi":{"pearson_r":-0.141,"mean_residual":-0.0068,"n":8000}}</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const NS = 'http://www.w3.org/2000/svg';
+  const $ = id => document.getElementById(id);
+  const f3 = v => (v == null || Number.isNaN(v)) ? '–' : (+v).toFixed(3);
+  const fmtInt = v => v.toLocaleString('en-US');
+  const formula = s => s.replace(/(\d+(?:\.\d+)?)/g, '<sub>$1</sub>');
+  const minus = s => String(s).replace('-', '−');
+
+  const SERIES = {
+    fefos_linear: { name: 'linear', color: 'var(--s-linear)' },
+    fefos_quadratic: { name: 'quadratic', color: 'var(--s-quad)' },
+    fefos_paper: { name: 'paper rule', color: 'var(--s-paper)' },
+    reference_average: { name: 'reference average', color: 'var(--s-ref)', ring: true },
+  };
+  const ORDER = ['reference_average', 'fefos_paper', 'fefos_quadratic', 'fefos_linear'];
+
+  // ---------- text fills
+  const ion = D.scope['ionic, metal cations'];
+  $('v-n').textContent = fmtInt(ion.fefos_linear.n);
+  $('v-mae').textContent = f3(ion.fefos_linear.mae);
+  $('v-ref').textContent = f3(ion.reference_average.mae) + ' eV/atom';
+  $('t-repro').innerHTML = fmtInt(D.reproduction.n) + '<small>/ ' + fmtInt(D.reproduction.n) + '</small>';
+  $('t-mae').innerHTML = f3(ion.fefos_linear.mae) + '<small>eV/atom</small>';
+  $('t-n').textContent = fmtInt(D.n_representable);
+  $('r-n').textContent = fmtInt(D.reproduction.n);
+  $('r-diff').textContent = '1×10⁻⁴';
+  $('r-mae').textContent = f3(D.reproduction.mae_all);
+  $('r-mae-f').textContent = f3(D.reproduction.mae_coordination_filtered);
+  $('r-nf').textContent = fmtInt(D.reproduction.n_coordination_filtered);
+  const ex = D.cr_mo_example;
+  $('cr-fit').textContent = `${ex.cr_red[0].toFixed(3)}x² − ${Math.abs(ex.cr_red[1]).toFixed(3)}x`;
+  $('crmo-mp').textContent = minus(ex.mp_points[0][2].toFixed(3));
+  $('n5').textContent = fmtInt(D.by_n_cations['5'].n);
+  $('bias-stable').textContent = '+' + D.scope['stable (on MP hull)'].fefos_linear.bias.toFixed(2);
+  $('chi-r').textContent = minus(D.residual_vs_chi.pearson_r.toFixed(2));
+  $('f-bin').textContent = fmtInt(D.n_binaries);
+  $('f-hulls').textContent = fmtInt(D.n_hulls);
+
+  // ---------- tables
+  const h2hModels = [
+    ['fefos_2023', 'FEFOS 2023, published coefficients', 'var(--ink)'],
+    ['fefos_paper', 'paper rule, refitted automatically', SERIES.fefos_paper.color],
+    ['fefos_quadratic', 'v2 quadratic', SERIES.fefos_quadratic.color],
+    ['fefos_linear', 'v2 linear', SERIES.fefos_linear.color],
+    ['reference_average', 'reference average', SERIES.reference_average.color],
+  ];
+  const h2hCols = Object.keys(D.head_to_head);
+  $('h2h-n').textContent = fmtInt(D.head_to_head.all.fefos_2023.n);
+  {
+    const maxV = 0.3;
+    let html = '<thead><tr><th>model</th>' + h2hCols.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>';
+    const best = Object.fromEntries(h2hCols.map(c => [c, Math.min(...h2hModels.map(([k]) => D.head_to_head[c][k].mae))]));
+    for (const [k, label, color] of h2hModels) {
+      html += `<tr><td><span class="model"><i class="key-dot" style="background:${color}"></i>${label}</span></td>`;
+      for (const c of h2hCols) {
+        const v = D.head_to_head[c][k].mae;
+        const isBest = v === best[c];
+        html += `<td class="${isBest ? 'best' : ''}"><div class="cell-bar">${f3(v)}<i style="width:${Math.min(100, v / maxV * 100)}%"></i></div></td>`;
+      }
+      html += '</tr>';
+    }
+    html += `<tr><td style="color:var(--muted)">compounds</td>` + h2hCols.map(c => `<td style="color:var(--muted)">${fmtInt(D.head_to_head[c].fefos_linear.n)}</td>`).join('') + '</tr>';
+    $('t-h2h').innerHTML = html + '</tbody>';
+  }
+  {
+    const cls = D.classes;
+    const cols = ['fefos_linear', 'fefos_quadratic', 'fefos_paper', 'reference_average'];
+    let html = '<thead><tr><th>chemistry</th><th>compounds</th>' + cols.map(c => `<th>${SERIES[c].name}</th>`).join('') + '</tr></thead><tbody>';
+    for (const [name, t] of Object.entries(cls)) {
+      html += `<tr><td>${name}</td><td>${fmtInt(t.fefos_linear.n)}</td>` + cols.map(c => `<td class="${c === 'fefos_linear' ? 'best' : ''}">${f3(t[c].mae)}</td>`).join('') + '</tr>';
+    }
+    $('t-class').innerHTML = html + '</tbody>';
+  }
+  const anions = Object.entries(D.by_anion).sort((a, b) => b[1].n - a[1].n);
+  {
+    const cols = ['fefos_linear', 'fefos_quadratic', 'fefos_paper', 'reference_average'];
+    let html = '<thead><tr><th>anion</th><th>compounds</th>' + cols.map(c => `<th>${SERIES[c].name}</th>`).join('') + '</tr></thead><tbody>';
+    for (const [an, r] of anions) html += `<tr><td>${an}</td><td>${fmtInt(r.n)}</td>` + cols.map(c => `<td>${f3(r[c])}</td>`).join('') + '</tr>';
+    $('t-anion').innerHTML = html + '</tbody>';
+    html = '<thead><tr><th>cations</th><th>compounds</th>' + cols.map(c => `<th>${SERIES[c].name}</th>`).join('') + '</tr></thead><tbody>';
+    for (const [k, r] of Object.entries(D.by_n_cations)) html += `<tr><td>${k === '5' ? '5+' : k}</td><td>${fmtInt(r.n)}</td>` + cols.map(c => `<td>${f3(r[c])}</td>`).join('') + '</tr>';
+    $('t-ncat').innerHTML = html + '</tbody>';
+  }
+  {
+    let html = '<thead><tr><th>compound</th><th>anion</th><th>mean OS</th><th>MP</th><th>linear</th><th>quadratic</th><th>paper</th><th style="text-align:left">oxidation states</th></tr></thead><tbody>';
+    for (const e of D.examples) {
+      const os = Object.entries(e.oxidation_states).map(([el, v]) => `${el} ${v === 0 ? '0' : Number.isInteger(v) ? '+' + v : '+' + v.toFixed(2)}`).join(', ');
+      html += `<tr><td class="formula">${formula(e.formula)}</td><td>${e.anion}</td><td>${e.mean_os.toFixed(2)}</td><td>${e.mp == null ? '–' : minus(e.mp.toFixed(3))}</td>` +
+        ['linear', 'quadratic', 'paper'].map(k => `<td>${minus(e[k].toFixed(3))}</td>`).join('') + `<td class="mono" style="text-align:left">${os}</td></tr>`;
+    }
+    $('t-examples').innerHTML = html + '</tbody>';
+  }
+
+  // ---------- chart helpers
+  const el = (tag, attrs = {}, parent) => {
+    const n = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    if (parent) parent.appendChild(n);
+    return n;
+  };
+  const scale = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0) * (r1 - r0);
+  const ticks = (min, max, count) => {
+    const raw = (max - min) / count, mag = 10 ** Math.floor(Math.log10(raw)), e = raw / mag;
+    const step = (e >= 7.5 ? 10 : e >= 3.5 ? 5 : e >= 1.5 ? 2 : 1) * mag;
+    const out = [];
+    for (let v = Math.ceil(min / step - 1e-9) * step; v <= max + 1e-9; v += step) out.push(+v.toFixed(10));
+    return out;
+  };
+  const fmtTick = v => minus(Math.abs(v) < 1e-12 ? '0' : (+v.toPrecision(6)).toString());
+  const tip = $('tip');
+  const showTip = (html, evt) => {
+    tip.innerHTML = html; tip.hidden = false;
+    const pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+    let x = evt.clientX + pad, y = evt.clientY + pad;
+    if (x + w > window.innerWidth - 8) x = evt.clientX - w - pad;
+    if (y + h > window.innerHeight - 8) y = evt.clientY - h - pad;
+    tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+  };
+  const hideTip = () => { tip.hidden = true; };
+  const tipRow = (color, label, value, ring) =>
+    `<div class="t-row"><i class="${ring ? 'key-ring' : 'key-dot'}" style="${ring ? '' : 'background:' + color}"></i>${label}<b>${value}</b></div>`;
+
+  function frame(host, o) {
+    host.innerHTML = '';
+    const W = Math.max(280, host.clientWidth), H = o.height;
+    const m = Object.assign({ top: 12, right: 16, bottom: 44, left: 52 }, o.margin || {});
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H }, host);
+    const x = scale(o.x[0], o.x[1], m.left, W - m.right);
+    const y = scale(o.y[0], o.y[1], H - m.bottom, m.top);
+    const g = el('g', {}, svg);
+    for (const t of o.yTicks || ticks(o.y[0], o.y[1], 5)) {
+      el('line', { x1: m.left, x2: W - m.right, y1: y(t), y2: y(t), style: 'stroke:var(--grid);stroke-width:1' }, g);
+      const tx = el('text', { x: m.left - 8, y: y(t) + 4, 'text-anchor': 'end', class: 'axis-text' }, g);
+      tx.textContent = (o.yFmt || fmtTick)(t);
+    }
+    el('line', { x1: m.left, x2: W - m.right, y1: H - m.bottom, y2: H - m.bottom, style: 'stroke:var(--axis);stroke-width:1' }, g);
+    for (const t of o.xTicks || ticks(o.x[0], o.x[1], 5)) {
+      const tx = el('text', { x: x(t), y: H - m.bottom + 18, 'text-anchor': 'middle', class: 'axis-text' }, g);
+      tx.textContent = (o.xFmt || fmtTick)(t);
+    }
+    if (o.xLabel) { const t = el('text', { x: (m.left + W - m.right) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axis-title' }, g); t.textContent = o.xLabel; }
+    if (o.yLabel) { const t = el('text', { x: 14, y: (m.top + H - m.bottom) / 2, 'text-anchor': 'middle', class: 'axis-title', transform: `rotate(-90 14 ${(m.top + H - m.bottom) / 2})` }, g); t.textContent = o.yLabel; }
+    return { svg, x, y, W, H, m };
+  }
+  const path = (pts, x, y) => pts.map(([a, b], i) => `${i ? 'L' : 'M'}${x(a).toFixed(1)},${y(b).toFixed(1)}`).join('');
+  const line = (f, pts, color, extra = '') => el('path', { d: path(pts, f.x, f.y), style: `fill:none;stroke:${color};stroke-width:2;stroke-linejoin:round;stroke-linecap:round;${extra}` }, f.svg);
+  const dot = (f, a, b, color, r = 5) => el('circle', { cx: f.x(a), cy: f.y(b), r, style: `fill:${color};stroke:var(--surface);stroke-width:2` }, f.svg);
+  const label = (f, a, b, text, anchor = 'start', dx = 8, dy = 4, cls = 'label-text') => { const t = el('text', { x: f.x(a) + dx, y: f.y(b) + dy, 'text-anchor': anchor, class: cls }, f.svg); t.innerHTML = text; return t; };
+  const crosshair = (f, xs, rowsAt, head) => {
+    const guide = el('line', { y1: f.m.top, y2: f.H - f.m.bottom, style: 'stroke:var(--axis);stroke-width:1', visibility: 'hidden' }, f.svg);
+    const hit = el('rect', { x: f.m.left, y: f.m.top, width: f.W - f.m.left - f.m.right, height: f.H - f.m.top - f.m.bottom, style: 'fill:transparent' }, f.svg);
+    hit.addEventListener('pointermove', evt => {
+      const r = f.svg.getBoundingClientRect(), px = (evt.clientX - r.left) * (f.W / r.width);
+      let best = 0; xs.forEach((v, i) => { if (Math.abs(f.x(v) - px) < Math.abs(f.x(xs[best]) - px)) best = i; });
+      guide.setAttribute('x1', f.x(xs[best])); guide.setAttribute('x2', f.x(xs[best])); guide.setAttribute('visibility', 'visible');
+      showTip(`<div class="t-head">${head(xs[best])}</div>` + rowsAt(best), evt);
+    });
+    hit.addEventListener('pointerleave', () => { guide.setAttribute('visibility', 'hidden'); hideTip(); });
+  };
+
+  // ---------- chart: curves (Fig. 1a)
+  function drawCurves() {
+    const host = $('c-curves');
+    const f = frame(host, { height: 300, x: [0, 2], y: [-0.4, 0.25], xLabel: 'oxidation-state change |x|', yLabel: 'ΔE vs MO₂ (eV/atom)', xTicks: [0, 0.5, 1, 1.5, 2] });
+    el('line', { x1: f.x(0), x2: f.x(2), y1: f.y(0), y2: f.y(0), style: 'stroke:var(--axis);stroke-width:1' }, f.svg);
+    const xs = ex.hull_x;
+    const crHull = xs.map((v, i) => [v, ex.hull_cr_rel[i]]), moHull = xs.map((v, i) => [v, ex.hull_mo_rel[i]]);
+    line(f, crHull, 'var(--s-ref)'); line(f, moHull, 'var(--s-ref)');
+    const par = (a, b) => xs.map(v => [v, a * v * v + b * v]);
+    const crFit = par(ex.cr_red[0], ex.cr_red[1]), moFit = par(ex.mo_ox[0], ex.mo_ox[1]), mo23 = par(ex.paper_mo_ox[0], ex.paper_mo_ox[1]);
+    line(f, mo23, 'var(--s-mo)', 'stroke-dasharray:6 5');
+    line(f, crFit, 'var(--s-cr)'); line(f, moFit, 'var(--s-mo)');
+    dot(f, ex.cr2o3[0], ex.cr2o3[1], 'var(--s-cr)');
+    label(f, ex.cr2o3[0], ex.cr2o3[1], 'Cr<tspan baseline-shift="sub" font-size="9">2</tspan>O<tspan baseline-shift="sub" font-size="9">3</tspan>', 'middle', 0, 20);
+    dot(f, ex.moo3[0], ex.moo3[1], 'var(--s-mo)');
+    label(f, ex.moo3[0], ex.moo3[1], 'MoO<tspan baseline-shift="sub" font-size="9">3</tspan>', 'end', -10, -8);
+    dot(f, 0, 0, 'var(--ink)', 4);
+    crosshair(f, xs, i => tipRow('var(--s-cr)', 'Cr reduction, fit', minus(crFit[i][1].toFixed(3))) + tipRow('var(--s-ref)', 'Cr hull', minus(crHull[i][1].toFixed(3))) +
+      tipRow('var(--s-mo)', 'Mo oxidation, fit', minus(moFit[i][1].toFixed(3))) + tipRow('var(--s-mo)', 'Mo oxidation, 2023', minus(mo23[i][1].toFixed(3))) +
+      tipRow('var(--s-ref)', 'Mo hull', minus(moHull[i][1].toFixed(3))), v => `x = ${v.toFixed(2)}`);
+  }
+
+  // ---------- chart: mixing (Fig. 1d)
+  function drawMix() {
+    const host = $('c-mix');
+    const f = frame(host, { height: 300, x: [0, 1], y: [-0.12, 0.01], xLabel: 'Cr fraction z', yLabel: 'ΔD (eV/atom)', yTicks: [-0.12, -0.09, -0.06, -0.03, 0], xTicks: [0, 0.25, 0.5, 0.75, 1] });
+    el('line', { x1: f.x(0), x2: f.x(1), y1: f.y(0), y2: f.y(0), style: 'stroke:var(--axis);stroke-width:1' }, f.svg);
+    const modes = [['paper', 'fefos_paper'], ['quadratic', 'fefos_quadratic'], ['linear', 'fefos_linear']];
+    for (const [k, s] of modes) line(f, ex.z.map((z, i) => [z, ex.delta_d[k][i]]), SERIES[s].color);
+    for (const [name, z, v] of ex.mp_points) {
+      const g = el('rect', { x: f.x(z) - 5, y: f.y(v) - 5, width: 10, height: 10, transform: `rotate(45 ${f.x(z)} ${f.y(v)})`, style: 'fill:var(--ink);stroke:var(--surface);stroke-width:2' }, f.svg);
+      label(f, z, v, 'CrMoO<tspan baseline-shift="sub" font-size="9">4</tspan> (MP)', 'end', -10, 4);
+    }
+    crosshair(f, ex.z, i => modes.slice().reverse().map(([k, s]) => tipRow(SERIES[s].color, SERIES[s].name, minus(ex.delta_d[k][i].toFixed(3)))).join(''), v => `z = ${v.toFixed(3)}`);
+  }
+
+  // ---------- chart: anion dot plot
+  function drawAnion() {
+    const host = $('c-anion');
+    host.innerHTML = '';
+    const W = Math.max(280, host.clientWidth), rowH = 26, m = { top: 6, right: 16, bottom: 40, left: 92 };
+    const H = m.top + m.bottom + rowH * anions.length;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H }, host);
+    const x = scale(0, 0.45, m.left, W - m.right);
+    for (const t of [0, 0.1, 0.2, 0.3, 0.4]) {
+      el('line', { x1: x(t), x2: x(t), y1: m.top, y2: H - m.bottom, style: 'stroke:var(--grid);stroke-width:1' }, svg);
+      const tx = el('text', { x: x(t), y: H - m.bottom + 16, 'text-anchor': 'middle', class: 'axis-text' }, svg); tx.textContent = fmtTick(t);
+    }
+    const tt = el('text', { x: (m.left + W - m.right) / 2, y: H - 6, 'text-anchor': 'middle', class: 'axis-title' }, svg); tt.textContent = 'mean absolute error (eV/atom)';
+    anions.forEach(([an, r], i) => {
+      const cy = m.top + rowH * i + rowH / 2;
+      const a = el('text', { x: 8, y: cy + 4, class: 'label-text' }, svg); a.textContent = an;
+      const n = el('text', { x: m.left - 10, y: cy + 4, 'text-anchor': 'end', class: 'axis-text' }, svg); n.textContent = fmtInt(r.n);
+      const vals = ORDER.map(k => r[k]);
+      el('line', { x1: x(Math.min(...vals)), x2: x(Math.max(...vals)), y1: cy, y2: cy, style: 'stroke:var(--axis);stroke-width:1.5' }, svg);
+      for (const k of ORDER) {
+        const s = SERIES[k];
+        if (s.ring) el('circle', { cx: x(r[k]), cy, r: 4.5, style: 'fill:var(--surface);stroke:var(--s-ref);stroke-width:2' }, svg);
+        else el('circle', { cx: x(r[k]), cy, r: 5, style: `fill:${s.color};stroke:var(--surface);stroke-width:2` }, svg);
+      }
+      const hit = el('rect', { x: 0, y: cy - rowH / 2, width: W, height: rowH, style: 'fill:transparent' }, svg);
+      hit.addEventListener('pointermove', evt => showTip(`<div class="t-head">${an} · ${fmtInt(r.n)} compounds</div>` + ORDER.slice().reverse().map(k => tipRow(SERIES[k].color, SERIES[k].name, f3(r[k]), SERIES[k].ring)).join(''), evt));
+      hit.addEventListener('pointerleave', hideTip);
+    });
+  }
+
+  // ---------- chart: by number of cations
+  function drawNcat() {
+    const host = $('c-ncat');
+    const cats = Object.keys(D.by_n_cations);
+    const f = frame(host, { height: 26 * anions.length + 46, x: [-0.3, cats.length - 0.7], y: [0, 0.3], xLabel: 'cations per compound', yLabel: 'MAE (eV/atom)', xTicks: [], yTicks: [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3] });
+    cats.forEach((c, i) => {
+      const t = el('text', { x: f.x(i), y: f.H - f.m.bottom + 18, 'text-anchor': 'middle', class: 'axis-text' }, f.svg);
+      t.textContent = c === '5' ? '5+' : c;
+    });
+    for (const k of ORDER) {
+      const pts = cats.map((c, i) => [i, D.by_n_cations[c][k]]);
+      line(f, pts, SERIES[k].color);
+      for (const [a, b] of pts) {
+        if (SERIES[k].ring) el('circle', { cx: f.x(a), cy: f.y(b), r: 4.5, style: 'fill:var(--surface);stroke:var(--s-ref);stroke-width:2' }, f.svg);
+        else dot(f, a, b, SERIES[k].color, 4.5);
+      }
+    }
+    label(f, 0, D.by_n_cations[cats[0]].reference_average, 'reference average', 'start', 0, -12, 'label-muted');
+    crosshair(f, cats.map((_, i) => i), i => ORDER.slice().reverse().map(k => tipRow(SERIES[k].color, SERIES[k].name, f3(D.by_n_cations[cats[i]][k]), SERIES[k].ring)).join(''),
+      v => `${cats[v] === '5' ? '5+' : cats[v]} cations · ${fmtInt(D.by_n_cations[cats[v]].n)} compounds`);
+  }
+
+  // ---------- chart: parity
+  let parityMode = 'lin';
+  function drawParity() {
+    const host = $('c-parity');
+    const P = D.parity_extension; // [formula, anion, ncat, mp, linear, reference]
+    const idx = parityMode === 'lin' ? 4 : 5;
+    const lo = -5, hi = 0.5;
+    const W = Math.max(280, host.clientWidth);
+    const f = frame(host, { height: Math.min(460, Math.max(300, W * 0.55)), x: [lo, hi], y: [lo, hi], xLabel: 'MP formation energy (eV/atom)', yLabel: 'predicted (eV/atom)', xTicks: [-5, -4, -3, -2, -1, 0], yTicks: [-5, -4, -3, -2, -1, 0] });
+    el('line', { x1: f.x(lo), y1: f.y(lo), x2: f.x(hi), y2: f.y(hi), style: 'stroke:var(--axis);stroke-width:1.5' }, f.svg);
+    label(f, -0.9, -0.15, 'y = x', 'end', 0, 0, 'label-muted');
+    const color = parityMode === 'lin' ? 'var(--s-linear)' : 'var(--s-ref)';
+    const g = el('g', { style: `fill:${color};fill-opacity:0.5` }, f.svg);
+    const pts = [];
+    for (const p of P) {
+      const a = Math.max(lo, Math.min(hi, p[3])), b = Math.max(lo, Math.min(hi, p[idx]));
+      el('circle', { cx: f.x(a).toFixed(1), cy: f.y(b).toFixed(1), r: 3.2 }, g);
+      pts.push([f.x(a), f.y(b), p]);
+    }
+    const stat = parityMode === 'lin' ? ion.fefos_linear : ion.reference_average;
+    const t = el('text', { x: f.m.left + 10, y: f.m.top + 16, class: 'label-text' }, f.svg);
+    t.textContent = `MAE ${f3(stat.mae)} eV/atom · bias ${stat.bias >= 0 ? '+' : '−'}${Math.abs(stat.bias).toFixed(3)} (all ${fmtInt(stat.n)} compounds)`;
+    const ring = el('circle', { r: 6, style: 'fill:none;stroke:var(--ink);stroke-width:1.5', visibility: 'hidden' }, f.svg);
+    const hit = el('rect', { x: f.m.left, y: f.m.top, width: f.W - f.m.left - f.m.right, height: f.H - f.m.top - f.m.bottom, style: 'fill:transparent' }, f.svg);
+    hit.addEventListener('pointermove', evt => {
+      const r = f.svg.getBoundingClientRect(), k = f.W / r.width;
+      const px = (evt.clientX - r.left) * k, py = (evt.clientY - r.top) * k;
+      let best = null, bd = 100;
+      for (const q of pts) { const d = (q[0] - px) ** 2 + (q[1] - py) ** 2; if (d < bd) { bd = d; best = q; } }
+      if (!best) { ring.setAttribute('visibility', 'hidden'); hideTip(); return; }
+      ring.setAttribute('cx', best[0]); ring.setAttribute('cy', best[1]); ring.setAttribute('visibility', 'visible');
+      const p = best[2];
+      showTip(`<div class="t-head formula">${formula(p[0])}</div><div class="t-row">${p[1]} anion, ${p[2]} cations</div>` +
+        `<div class="t-row">MP<b>${minus(p[3].toFixed(3))}</b></div><div class="t-row">${parityMode === 'lin' ? 'FEFOS linear' : 'reference'}<b>${minus(p[idx].toFixed(3))}</b></div>`, evt);
+    });
+    hit.addEventListener('pointerleave', () => { ring.setAttribute('visibility', 'hidden'); hideTip(); });
+  }
+  for (const [id, mode] of [['b-lin', 'lin'], ['b-ref', 'ref']]) {
+    $(id).addEventListener('click', () => {
+      parityMode = mode;
+      $('b-lin').setAttribute('aria-pressed', String(mode === 'lin'));
+      $('b-ref').setAttribute('aria-pressed', String(mode === 'ref'));
+      drawParity();
+    });
+  }
+
+  const draws = [[$('c-curves'), drawCurves], [$('c-mix'), drawMix], [$('c-anion'), drawAnion], [$('c-ncat'), drawNcat], [$('c-parity'), drawParity]];
+  const widths = new Map();
+  const ro = new ResizeObserver(entries => {
+    for (const e of entries) {
+      const w = Math.round(e.contentRect.width);
+      if (widths.get(e.target) === w) continue;
+      widths.set(e.target, w);
+      const d = draws.find(([h]) => h === e.target);
+      if (d) d[1]();
+    }
+  });
+  for (const [h, fn] of draws) { fn(); widths.set(h, Math.round(h.clientWidth)); ro.observe(h); }
+})();
+</script>
+
+</body>
+</html>

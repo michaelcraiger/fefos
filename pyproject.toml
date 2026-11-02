@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fefos"
+version = "2.0.0"
+description = "Formation Energies From Oxidation States: formation energies of multi-cation compounds from binary convex hulls"
+readme = "README.md"
+license = { file = "LICENSE.md" }
+authors = [{ name = "Michael J. Craig" }]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.24", "pandas>=2.0"]
+
+[project.optional-dependencies]
+data = ["pyarrow>=14"]
+plot = ["matplotlib>=3.7"]
+dev = ["pytest>=7", "pyarrow>=14", "matplotlib>=3.7"]
+
+[project.scripts]
+fefos = "fefos.cli:main"
+
+[project.urls]
+Paper = "https://doi.org/10.1039/D3CY00107E"
+Source = "https://github.com/michaelcraiger/fefos"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]

@@ -1,55 +1,171 @@
-# Formation energy from oxidation states (FEFOS)
+# FEFOS: Formation Energies From Oxidation States
 
+<p align="center"><img src="docs/paper_2023_mixing.jpg" width="320" alt="Mixing two oxides"></p>
 
-<p style='text-align: justify;'> 
+FEFOS predicts the formation energy of a mixed compound from nothing but the
+binary compounds of its elements. Each element's formation energy is described
+as a function of its oxidation state, and the compound's energy is the
+charge-neutral combination of those curves that minimises the total.
 
-Creating binary oxide phase diagrams is a time consuming process both experimentally and computationally, and exploring all of chemical space is a daunting task but may be necessary if we are to discover novel functional materials. This repo contains code to predict oxide stability with errors on par with deep learning methods.
+The method was introduced for binary-cation oxides in
+[Craig, Kleuker, Bajdich & García-Melchor, *Catal. Sci. Technol.* 2023](https://doi.org/10.1039/D3CY00107E).
+**Version 2** is a complete rewrite as a tested Python package and extends the
+method from two cations sharing O²⁻ to:
 
-[See the paper here!](https://pubs.rsc.org/en/Content/ArticleLanding/2023/CY/D3CY00107E)
+* **any number of cations** (ternary, quaternary, … high-entropy compounds);
+* **any anion**: O, S, Se, Te, N, P, C, H, F, Cl, Br, I;
+* **any stoichiometry**: e.g. spinels (mean oxidation state 8/3), not just MO, M₂O₃, MO₂;
+* **curves fitted automatically** to each element's convex hull, so no hand-tuned coefficients remain.
 
-## Overview
+The code and data exactly as published in 2023 are kept under the git tag
+[`paper-2023`](https://github.com/michaelcraiger/fefos/tree/paper-2023), and
+`fefos reproduce-paper` recomputes all 2,327 published predictions from the new
+code (max. deviation 1×10⁻⁴ eV/atom, the rounding of the published table).
 
-When we mix two elements into an oxide, the two elements can have different oxidation states. 
+## How it works
 
-This model attempts to describe how this stabilises binary oxides.
+1. **One hull per element and anion.** A binary compound M_aX_b sits at the formal
+   oxidation state *q* = *v*·*b*/*a* (with *v* the anion valence). Its formation
+   energy per cation, *e*(*q*), combines linearly, so the lower convex hull of
+   (*q*, *e*) is the thermodynamic hull of the M–X system. Beyond the most
+   anion-rich stable compound the hull is flat (excess anion leaves as X₂).
+2. **A common reference.** For a compound with cation fractions *cᵢ* and mean
+   oxidation state *q̄*, every cation starts at *q̄*. Its reference energy is
+   read off its hull, so the 2023 hand-picked or "synthetic" reference oxides
+   are no longer needed. This gives the reference average Σ*cᵢ*·Δ*E*(MᵢX_{q̄/v}).
+3. **Charge-neutral redistribution (Eq. 2 of the paper, now n cations).** Cations
+   shift their oxidation states by *dᵢ*, subject to Σ*cᵢdᵢ* = 0. Each shift is
+   priced by that element's oxidation or reduction curve. The minimum is the
+   mixing energy ΔD, and Δ*E*_f = reference average + ΔD (Eq. 6).
 
-If creating an oxide from elements A–B in stoichiometry (A+B):O=2, for instance, we need to make quadratic equations which fit through the most stable points on the A–O and B–O phase diagrams, where the (0, 0) value is AO2 and BO2, and we need quadratic equations for reduction and oxidation. This general representation can be applied to any element, as we enforce that the average oxidation state of non-oxygen elements in ABO4 be +4, and take a weighted sum of the oxidation and reduction equations for any combination of elements in formation_energy_mixer.ipynb
+Three curve and merging modes are provided:
 
-## Installing
+| mode | curves | merging | notes |
+|---|---|---|---|
+| `linear` (default) | the hull itself (piecewise linear) | concentration-weighted, exact | parameter-free; equals the energy of the most stable mixture of binary compounds (verified against pymatgen to 10⁻¹⁴ eV/atom) |
+| `quadratic` | Eq. 1 parabolas *a*₁*x*² + *a*₂*x* least-squares fitted to the hull (per cation, ±2 OS) | concentration-weighted | smooth, two coefficients per side |
+| `paper` | Eq. 1 parabolas in the 2023 convention (per atom, symmetric through the minimum) | the 2023 rule: unweighted sum + end-member correction (Eq. 5), generalised to n cations | reproduces e.g. *f*_red,CrO₂ = 0.319*x*² − 0.638*x* of Fig. 1 automatically |
 
-`NOTE` the code is very version critical, use python version 3.8.12, other versions can have difficulty using the necessary version of pymatgen. Using conda; 
+The merging is solved exactly: by bisection on the Lagrange multiplier (the anion
+chemical potential) for parabolas, and by a greedy fill of hull segments in
+order of slope (a fractional knapsack problem) for the linear mode.
+
+## Results (Materials Project, 2026-09-28 release)
+
+Benchmark: every multi-cation, single-anion compound in MP (lowest-energy
+polymorph per composition), 107,600 of 108,808 representable. MAE in eV/atom.
+
+**On the 2023 model's own domain** (two-cation oxides with mean OS 2/3/4, the
+2,735 compounds the published coefficients cover):
+
+| | all | ICSD | near hull (<0.1 eV/atom) |
+|---|---|---|---|
+| FEFOS 2023 (published coefficients) | 0.161 | 0.160 | 0.132 |
+| 2023 rule, refitted automatically to the hulls (`paper`) | 0.160 | 0.151 | 0.124 |
+| FEFOS v2 `quadratic` | 0.148 | 0.134 | 0.101 |
+| FEFOS v2 `linear` | **0.140** | **0.117** | **0.091** |
+| reference average (no charge transfer) | 0.212 | 0.255 | 0.192 |
+
+**The extension** (56,428 ionic compounds with metal cations, all twelve anions, 2–6 cations):
+
+| | all | stable | ICSD | near hull |
+|---|---|---|---|---|
+| `linear` | **0.121** | **0.112** | **0.120** | **0.096** |
+| `quadratic` | 0.137 | 0.133 | 0.153 | 0.119 |
+| `paper` | 0.160 | 0.167 | 0.167 | 0.146 |
+| reference average | 0.234 | 0.242 | 0.276 | 0.234 |
+
+The error does not grow with the number of cations (`linear`: 0.129, 0.115,
+0.108, 0.108 eV/atom for 2, 3, 4 and 5+ cations) and is 0.07–0.19 eV/atom across
+the twelve anions. Two classes are harder:
+
+* **polyanions and mixed anions**, where a nonmetal acts as a cation (phosphates,
+  sulfates, carbonates, oxyhalides): `linear` 0.231 vs reference 0.448;
+* **intermetallic-like compounds** with mean OS < 1: 0.55. These are outside
+  the oxidation-state picture.
+
+The full validation report with figures is in `docs/validation_report.html`
+(download and open it in a browser). Full tables: `results/summary.json`; per-compound predictions:
+`results/benchmark_predictions.csv.gz`.
+
+## Install
+
+```bash
+git clone https://github.com/michaelcraiger/fefos && cd fefos
+pip install -e ".[dev]"      # Python >= 3.10; core needs only numpy and pandas
+```
+
+## Use
+
+```console
+$ fefos predict SrTiO3 LiFePO4 KMgF3 Li2ZrN2
+formula          anion mean OS      dEf      ref       dD  oxidation states
+SrTiO3               O    3.00   -3.335   -2.928   -0.407  Sr +2.00, Ti +4.00
+LiFePO4              O    2.67   -2.090   -1.676   -0.414  Fe +2.00, Li +1.00, P +5.00
+KMgF3                F    1.50   -3.460   -2.938   -0.522  K +1.00, Mg +2.00
+Li2ZrN2              N    2.00   -1.122   -0.812   -0.310  Li +1.00, Zr +4.00
+$ fefos curves Cr O --q 4 --mode paper     # hull + Eq. 1 parabolas
+$ fefos reproduce-paper                    # check against the 2023 predictions
+```
+
+```python
+from fefos.cli import load_model
+
+model = load_model(mode="linear")          # hulls from data/mp_2026-09-28/binaries.csv
+p = model.predict("Ba2YCu3O7")
+p.formation_energy, p.reference_energy, p.delta_d, p.oxidation_states
+
+# or from your own binary data (any source: MP, OQMD, your DFT)
+from fefos import FEFOS
+model = FEFOS.from_binary_entries(
+    [{"composition": "TiO2", "formation_energy_per_atom": -3.51}, ...], mode="quadratic"
+)
+```
+
+## Reproduce the benchmark
+
+```bash
+python scripts/fetch_mp.py          # MP summary from AWS Open Data (no API key) -> data/mp_<version>/
+python scripts/run_benchmark.py     # -> results/benchmark_predictions.csv.gz, results/summary.json
+python scripts/make_report_data.py  # -> results/report_data.json
+pytest
+```
+
+The `quadratic`/`paper` fitting window (±2 oxidation states) was chosen on the
+2023 domain only (two-cation oxides) and then applied unchanged to every other
+anion and cation count.
+
+## Layout
 
 ```
-conda create -n oxide_mixer python=3.8.12
-```
-Then activate the environment
-
-```
-conda activate oxide_mixer
-```
-
-```
-git clone https://github.com/michaelcraiger/fefos
-``` 
-
-Then in the environment:
-
-```
-conda install matplotlib==3.2.1 numpy==1.22.3 scipy==1.7.3 pymatgen==2022.4.19 notebook ipykernel 
-```
-Finally to be able to use the environment in ipykernel
-```
-python -m ipykernel install --user --name=oxide_mixer
+src/fefos/
+  composition.py  formula parsing; cation/anion view, mean oxidation state
+  hull.py         1-D convex hull of an M–X system on the oxidation-state axis
+  curves.py       Eq. 1 parabolas fitted to a hull around any reference state
+  mixing.py       charge-neutral merging of curves for n cations (Eqs. 2–5)
+  model.py        FEFOS model (linear / quadratic / paper modes)
+  legacy.py       exact 2023 model with the published coefficients
+  data.py         Materials Project open-data download and dataset building
+  benchmark.py    benchmark runner and metrics
+data/
+  paper_2023/     published coefficients, references, predictions, benchmark set
+  mp_2026-09-28/  binaries.csv (hull inputs), compounds.csv.gz (benchmark targets)
+results/          benchmark outputs
 ```
 
-## File system description
+## Citation
 
-The directory `data_gather` contains the code to collect the necessary data from Materials Project in `mp_data_save.ipynb`. This is saved as pickle files since there contains pymatgen structure objects and they are under `unary_oxide_data.p` for unary oxide information, `ele2gs.p` which is the single element energy data, required to calculate formation energies, and the binary oxide data under `binary_oxide_data.p`. These files are needed to fit the coefficients for the parabolas of each of the 3 considered binary oxide types i.e. MO, M2O3 and MO2-type oxides under the `make_quadratics` directory. Within `data_gather` another file which saves all the MO/M2O3/MO2-type binary oxides with the appropriate pairs of elements, and formation energy infomation required by FEFOS, is seen in `binary_pairing_data.ipynb` and saved as `binary_pairing_data.p` which is required to plot Figures 2 and 4.
+```bibtex
+@article{craig2023fefos,
+  title   = {FEFOS: a method to derive oxide formation energies from oxidation states},
+  author  = {Craig, Michael John and Kleuker, Felix and Bajdich, Michal and Garc{\'i}a-Melchor, Max},
+  journal = {Catalysis Science \& Technology},
+  volume  = {13},
+  pages   = {3427},
+  year    = {2023},
+  doi     = {10.1039/D3CY00107E}
+}
+```
 
-In `make_quadratics` there is code to save the oxidation and reduction parabola coefficients for each considered element, oxide pair under the `supplementary_data/{MO,M2O3,MO2}_parabs.csv` files containing these coefficients. Note that these coefficients will depend on the saved values from MP that make up `unary_oxide_data.p`, so if data in MP changes, these coefficients will change. However, the data contained in this repository will be fixed for the sake of the reproducibility of the results presented in the notebooks in this repo.
-
-`roost_test_data` contains the csv files required to plot the learning curves for Figure 3 in the manuscript, found in the Goodall, Lee Nature Communications paper under 'Data availability'.
-
-The code to plot Figure 1, 2 and 4 is in the notebook `formation_energy_mixer.ipynb` as this includes the code which carries out the FEFOS procedure once the parabola coefficients and binary oxide data from Materials Project are saved.
-
-</p>
+Materials Project data: A. Jain *et al.*, *APL Materials* **1**, 011002 (2013),
+used under CC BY 4.0.
