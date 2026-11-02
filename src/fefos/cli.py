@@ -24,7 +24,39 @@ def load_model(data: str | Path = DEFAULT_DATA, mode: str = "linear", window: fl
     return FEFOS.from_binary_entries(binary_records(binaries), mode=mode, window=window)
 
 
+def load_bond_data(data: str | Path = DEFAULT_DATA):
+    """Reference bond-length table and fitted correction shipped with a snapshot."""
+    import pandas as pd
+
+    from .structure import BondLengthCorrection, BondLengthTable
+
+    data = Path(data)
+    table = BondLengthTable.from_frame(pd.read_csv(data / "bond_lengths.csv"))
+    correction = BondLengthCorrection.from_frame(pd.read_csv(data / "bond_correction.csv"))
+    return table, correction
+
+
+def _predict_bonds(args) -> None:
+    from .structure import predict_with_bonds
+
+    model = load_model(args.data, "linear")
+    table, correction = load_bond_data(args.data)
+    print(f"{'formula':16s} {'dEf':>8s} {'+bonds':>8s}  assumed M-X bond lengths (charge)")
+    for formula in args.formulas:
+        r = predict_with_bonds(model, table, correction, formula)
+        lengths = ", ".join(
+            f"{el} {d:.3f} A ({r.prediction.oxidation_states[el]:+.2f})"
+            for el, d in r.features.bond_lengths.items()
+        )
+        print(
+            f"{formula:16s} {r.prediction.formation_energy:8.3f} {r.formation_energy:8.3f}  {lengths}"
+        )
+    print("energies in eV/atom; +bonds adds the per-anion bond-length correction (linear mode)")
+
+
 def _predict(args) -> None:
+    if args.bonds:
+        return _predict_bonds(args)
     model = load_model(args.data, args.mode, args.window)
     print(
         f"{'formula':16s} {'anion':>5s} {'mean OS':>7s} {'dEf':>8s} {'ref':>8s} {'dD':>8s}  oxidation states"
@@ -78,6 +110,9 @@ def main(argv: list[str] | None = None) -> None:
     sub = ap.add_subparsers(dest="command", required=True)
     p = sub.add_parser("predict", parents=[common], help="predict formation energies")
     p.add_argument("formulas", nargs="+")
+    p.add_argument(
+        "--bonds", action="store_true", help="add assumed bond lengths and the bond correction"
+    )
     p.set_defaults(func=_predict)
     c = sub.add_parser(
         "curves", parents=[common], help="show an element's hull and fitted parabolas"

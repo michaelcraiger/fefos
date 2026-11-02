@@ -88,6 +88,47 @@ The full validation report with figures is in `docs/validation_report.html`
 (download and open it in a browser). Full tables: `results/summary.json`; per-compound predictions:
 `results/benchmark_predictions.csv.gz`.
 
+## Assumed bond lengths
+
+The paper pointed to ionic size (tolerance factors, the τ descriptor) as the
+next ingredient. `fefos.structure` supplies it without the structure of the
+compound being predicted:
+
+* **Reference bond lengths.** Every binary compound within 0.1 eV/atom of the
+  hull (2,553 of them) gives the mean cation–anion bond length at the cation's
+  charge. Neighbours come from CrystalNN, as in MP, and charges from bond
+  valence, so Li is +1 in Li₂O₂. Interpolating in charge gives the **assumed
+  bond length** `d(M, X, q)` for 832 element–anion pairs
+  (`data/mp_2026-09-28/bond_lengths.csv`).
+* **Validated against real structures.** At the oxidation states FEFOS
+  predicts, assumed lengths match the actual CrystalNN bond lengths of 118,685
+  cation sites in ionic compounds to 0.099 Å (4.0%). That compares with
+  0.108 Å when every cation sits at the mean oxidation state, and 0.097 Å with
+  the bond-valence charges of the actual structure. FEFOS's composition-only
+  charges recover most of that gain.
+* **What the hull misses.** The size mismatch and the spread of ionic
+  potential *q*/*d* of the cations correlate with the energy FEFOS misses
+  (r = −0.30 and −0.27 near the hull): more contrast, more stabilisation. A
+  per-anion linear correction (offset plus one slope per descriptor) is fitted
+  on near-hull compounds (`bond_correction.csv`):
+
+  | held-out MAE, eV/atom (stable / ICSD) | FEFOS | + anion offset | + offset and bond features |
+  |---|---|---|---|
+  | chemical systems held out (5-fold) | 0.109 / 0.112 | 0.088 / 0.095 | **0.080 / 0.082** |
+  | trained on 2 cations, tested on 3+ | 0.115 / 0.135 | 0.095 / 0.107 | **0.085 / 0.078** |
+  | oxide coefficients applied to other anions | 0.096 / 0.092 | **0.076 / 0.075** | 0.089 / 0.080 |
+
+  The coefficients do not transfer between anions, so this is an empirical,
+  per-anion term on top of FEFOS, not part of the parameter-free model.
+
+```console
+$ fefos predict SrTiO3 KMgF3 Li2ZrN2 --bonds
+formula               dEf   +bonds  assumed M-X bond lengths (charge)
+SrTiO3             -3.335   -3.453  Sr 2.611 A (+2.00), Ti 1.954 A (+4.00)
+KMgF3              -3.460   -3.518  K 2.654 A (+1.00), Mg 1.988 A (+2.00)
+Li2ZrN2            -1.122   -1.269  Li 2.045 A (+1.00), Zr 2.275 A (+4.00)
+```
+
 ## Install
 
 ```bash
@@ -128,6 +169,10 @@ model = FEFOS.from_binary_entries(
 python scripts/fetch_mp.py          # MP summary from AWS Open Data (no API key) -> data/mp_<version>/
 python scripts/run_benchmark.py     # -> results/benchmark_predictions.csv.gz, results/summary.json
 python scripts/make_report_data.py  # -> results/report_data.json
+# assumed bond lengths (pip install -e ".[structure]" for pymatgen)
+python scripts/compute_reference_bonds.py   # CrystalNN + bond valence on reference binaries
+python scripts/fetch_mp_bonds.py            # MP bond lengths of the benchmark compounds
+python scripts/bond_length_analysis.py      # -> bond_lengths.csv, bond_correction.csv, results/bond_lengths.json
 pytest
 ```
 
@@ -144,12 +189,14 @@ src/fefos/
   curves.py       Eq. 1 parabolas fitted to a hull around any reference state
   mixing.py       charge-neutral merging of curves for n cations (Eqs. 2–5)
   model.py        FEFOS model (linear / quadratic / paper modes)
+  structure.py    assumed bond lengths, bond features and the bond-length correction
   legacy.py       exact 2023 model with the published coefficients
   data.py         Materials Project open-data download and dataset building
   benchmark.py    benchmark runner and metrics
 data/
   paper_2023/     published coefficients, references, predictions, benchmark set
-  mp_2026-09-28/  binaries.csv (hull inputs), compounds.csv.gz (benchmark targets)
+  mp_2026-09-28/  binaries.csv (hull inputs), compounds.csv.gz (benchmark targets),
+                  binary_bonds.csv, bond_lengths.csv, bond_correction.csv, bonds.csv.gz
 results/          benchmark outputs
 ```
 

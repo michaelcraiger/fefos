@@ -15,6 +15,7 @@ dependencies = ["numpy>=1.24", "pandas>=2.0"]
 [project.optional-dependencies]
 data = ["pyarrow>=14"]
 plot = ["matplotlib>=3.7"]
+structure = ["pymatgen>=2024.1"]
 dev = ["pytest>=7", "pyarrow>=14", "matplotlib>=3.7"]
 
 [project.scripts]
